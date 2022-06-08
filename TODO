@@ -1,0 +1,39 @@
+VM 设计
+
+1. 类型
+  * 支持动态类型
+  * global type id
+
+2. 值：
+  * primitive: byte, int64, double, procedure, type, field
+  * reference (layout 如C#中的值/引用类型，不在这个层面考虑)
+
+3. 调用栈帧
+  * 求值栈
+    * primitive 和 reference 分开存储，便于简化 gc 标记算法的实现及开销。
+  * 局部变量表
+    * 没必要区分 primitive/reference，只需要维护 reference 索引，对每次 gc 标记操作会增加一次寻址，开销还好。且一个索引顺序，编码更直观一些。
+
+4. 堆
+  * thread-local heap，使用 gc， 线程内通过 reference 引用对象
+  * 线程间通过序列化传递对象
+
+/** Deprecated
+  * thread-local heap，使用 gc， 线程内通过 reference 引用对象
+  * 线程间通过 rc 保证 reference 有效性， low-level 原语如下
+    * acquire obj  // 在保证 obj 存活的前提下，obj 的 rc++
+    * release obj  // 在保证 obj 存活的前提下，obj 的 rc--
+    * acquire obj field  // 在保证 obj 存活的前提下，acquire 指定字段对应的 obj，该指令可能涉及到 obj 所属线程的 gc lock
+  * high-level 设计
+    * shadow 创建指定对象的影子对象
+    上层实现上，rc 的获取者应为线程，且尽量保证一个线程对同一对象 rc 最多加一。上层最好通过辅助代码屏蔽这些原语，可以借助 thread-local 的 gc 来保证 rc 的正确获取和释放。
+**/
+
+5. 模块化
+  * Module 为最小独立代码单元
+  * Struct 支持 singleton，从而实现全局静态存储
+  * Procedure 支持字节码和 native 代码
+  * Constant Pool 支持 type, procedure, field index 的加载时定位，特别是 field index 的相对定位能力可以解决绝对定位机制下 layout 变更带来的兼容性问题。
+
+6. 指令集
+见 src/main/vm/op.h

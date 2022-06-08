@@ -1,0 +1,96 @@
+## 模块定义
+#module_begin hello
+
+  ## 类型定义
+  #struct_begin node
+    value int64
+    next reference
+  #struct_end
+
+  ## 过程定义
+  #proc_begin print
+    #params int64
+    #code_begin
+      ret
+    #code_end
+  #proc_end
+
+  #proc_begin main
+    #locals reference reference reference
+    #code_begin
+      ## a = new hello.node
+      loadc 2
+      new
+      storer 0
+
+      ## a.value = 1000
+      loadc 0
+      loadc 4
+      loadr 0
+      setp
+
+      ## a.next = null
+      loadn
+      loadc 5
+      loadr 0
+      setr
+
+      ## b = new hello.node
+      loadc 2
+      new
+      storer 1
+
+      ## b.value = 2000
+      loadc 1
+      loadc 4
+      loadr 1
+      setp
+
+      ## b.next = a
+      loadr 0
+      loadc 5
+      loadr 1
+      setr
+
+      ## head = b
+      loadr 1
+      storer 2
+
+      ## if (head == null) break
+BEGIN:
+      loadn
+      loadr 2
+      eq_ref
+      if END
+
+      ## print(head.value)
+      loadc 4
+      loadr 2
+      getp
+      loadc 3
+      call
+
+      ## head = head.next
+      loadc 5
+      loadr 2
+      getr
+      storer 2
+
+      goto BEGIN
+
+END:
+      ret
+    #code_end
+  #proc_end
+
+  ## 常量定义
+  #const_begin
+    int64 "1000"
+    int64 "2000"
+    type "hello.node"
+    proc "hello.print"
+    field "hello.node.value"
+    field "hello.node.next"
+  #const_end
+
+#module_end
