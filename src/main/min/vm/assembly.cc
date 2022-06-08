@@ -24,17 +24,14 @@ CountT Struct::Count() const {
 
 Procedure::Procedure(std::string name,
                      RetType ret_type,
-                     std::initializer_list<ValueType> params,
-                     std::initializer_list<ValueType> locals,
+                     std::vector<ValueType> params,
+                     std::vector<ValueType> locals,
                      std::basic_string<ByteT> byte_codes)
-  : name_(std::move(name)), ret_type_(ret_type), byte_codes_(std::move(byte_codes)) {
-  for (auto&& t : params) {
-    params_.Put(t);
-  }
-  for (auto&& t : locals) {
-    locals_.Put(t);
-  }
-}
+  : name_(std::move(name)),
+    ret_type_(ret_type),
+    params_(std::move(params)),
+    locals_(std::move(locals)),
+    byte_codes_(std::move(byte_codes)) {}
 
 Result<const Struct&> Module::GetStruct(CountT i) const {
   return structs_.Get(i);

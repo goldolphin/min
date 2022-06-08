@@ -4,6 +4,7 @@
 
 #include "engine.h"
 #include "string_utils.h"
+#include "min/common/debug.h"
 
 /**
  * 过程调用约定采用 stdcall ：参数从右至左依次入栈，出栈顺序为从左至右，由被调用者清理栈空间。
@@ -11,12 +12,6 @@
  */
 
 namespace min {
-
-#ifdef NDEBUG
-#define DEBUG_LOG(msg) ((void)0)
-#else
-#define DEBUG_LOG(msg) ({ std::cout << "                                                |" << msg; ((void)0); }) // NOLINT(bugprone-macro-parentheses)
-#endif
 
 static Result<void> invoke_nop(Environment* env) {
   return {};
@@ -88,20 +83,20 @@ static Result<void> invoke_call(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto v = TRY(stack->PopPrimitive(frame));
   if (v.procedure_value->native_impl() == nullptr) {
-    DEBUG_LOG("## Enter procedure: " << v.procedure_value->assembly().name() << std::endl);
+    DEBUG_LOG("## Enter procedure: " << v.procedure_value->assembly().name() << "()" << std::endl);
     return stack->PushFrame(v.procedure_value->managed_ptr());
   } else {
-    DEBUG_LOG("## Enter native procedure: " << v.procedure_value->assembly().name() << std::endl);
+    DEBUG_LOG("## Enter native procedure: " << v.procedure_value->assembly().name() << "()" << std::endl);
     TRY(stack->PushFrame(v.procedure_value->managed_ptr()));
     v.procedure_value->native_impl()->Call(env);
-    DEBUG_LOG("## Exit native procedure: " << v.procedure_value->assembly().name() << std::endl);
+    DEBUG_LOG("## Exit native procedure: " << v.procedure_value->assembly().name() << "()" << std::endl);
     return stack->PopFrame();
   }
 }
 
 static Result<void> invoke_ret(Environment* env) {
   auto stack = env->call_stack();
-  DEBUG_LOG("## Exit procedure: " << stack->GetProcedure(TRY(stack->CurrentFrame()))->assembly().name() << std::endl);
+  DEBUG_LOG("## Exit procedure: " << stack->GetProcedure(TRY(stack->CurrentFrame()))->assembly().name() << "()" << std::endl);
   return stack->PopFrame();
 }
 
@@ -126,7 +121,7 @@ static Result<void> invoke_new(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto t = TRY(stack->PopPrimitive(frame));
   auto heap = env->heap();
-  auto r = heap->New(t.type_value->managed_ptr());
+  auto r = TRY(heap->New(t.type_value->managed_ptr()));
   return stack->PushReference(frame, r);
 }
 
@@ -135,7 +130,7 @@ static Result<void> invoke_singleton(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto t = TRY(stack->PopPrimitive(frame));
   auto heap = env->heap();
-  auto r = heap->Singleton(t.type_value->managed_ptr());
+  auto r = TRY(heap->Singleton(t.type_value->managed_ptr()));
   return stack->PushReference(frame, r);
 }
 
@@ -494,8 +489,7 @@ Result<void> Engine::InvokeOp(Environment* env) {
 }
 Result<Value> Engine::CallProcedure(Environment* env,
                                     const std::string& proc_name,
-                                    const std::vector<Primitive>& paramps,
-                                    const std::vector<RefT>& paramrs) {
+                                    const std::vector<Value>& params) {
   std::string m, p;
   std::tie(m, p) = TRY(parse_procedure(proc_name));
   auto module = TRY(env->GetModule(m));
@@ -505,11 +499,16 @@ Result<Value> Engine::CallProcedure(Environment* env,
   auto initial_frame = TRY(stack->CurrentFrame());
 
   // 1. 将参数压栈
-  for (auto it = paramps.rbegin(); it < paramps.rend(); ++ it) {
-    TRY(stack->PushPrimitive(initial_frame, *it));
+  CountT param_count = proc->assembly().ParamCount();
+  if (param_count != params.size()) {
+    return make_error("Incorrect param count: " + to_string(params.size()));
   }
-  for (auto it = paramrs.rbegin(); it < paramrs.rend(); ++ it) {
-    TRY(stack->PushReference(initial_frame, *it));
+  for (CountT i = 0; i < param_count; ++i) {
+    if (TRY(proc->assembly().GetParam(i)) != ValueType::REFERENCE) {
+      TRY(stack->PushPrimitive(initial_frame, params[i].primitive));
+    } else {
+      TRY(stack->PushReference(initial_frame, params[i].reference));
+    }
   }
 
   // 2. 将函数引用压栈

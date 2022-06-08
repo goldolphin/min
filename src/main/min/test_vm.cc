@@ -44,13 +44,13 @@ Result<void> test_call() {
   Engine engine;
   Int64T a = 1;
   Int64T b = 2;
-  auto v1 = TRY(engine.CallProcedure(&env, "test.add", { {.int64_value = a}, {.int64_value = b} }, {}));
+  auto v1 = TRY(engine.CallProcedure(&env, "test.add", { {{.int64_value = a}}, {{.int64_value = b}} }));
   std::cout << v1.primitive.int64_value << std::endl;
 
-  auto v2 = TRY(engine.CallProcedure(&env, "test.mul4", { v1.primitive }, {}));
+  auto v2 = TRY(engine.CallProcedure(&env, "test.mul4", {{ v1.primitive }}));
   std::cout << v2.primitive.int64_value << std::endl;
 
-  auto v3 = TRY(engine.CallProcedure(&env, "test.mul4", { v2.primitive }, {}));
+  auto v3 = TRY(engine.CallProcedure(&env, "test.mul4", {{ v2.primitive }}));
   std::cout << v3.primitive.int64_value << std::endl;
 
   return {};
@@ -151,11 +151,45 @@ Result<void> test_list() {
 
   // 执行
   Engine engine;
-  return engine.CallProcedure(&env, "hello.main", {}, {});
+  return engine.CallProcedure(&env, "hello.main", {});
+}
+
+Result<void> test_gc() {
+  // 定义代码
+  auto options = Options::Default();
+  options.heap_options.capacity = 1000;
+  Environment env(std::move(options));
+  TRY(env.NewModule("test"));
+  auto module = TRY(env.GetModule("test"));
+  assembly::Struct struct_node ("node");
+  struct_node.Put({"value", ValueType::INT64});
+  struct_node.Put({"next", ValueType::REFERENCE});
+  TRY(module->DefineStruct(std::move(struct_node)));
+  TRY(module->DefineProcedure(assembly::Procedure("main",
+                                                  min::assembly::Procedure::RetType::VOID,
+                                                  { },
+                                                  { ValueType::REFERENCE },
+                                                  TRY(OpWriter()
+                                                          .DefineLabel("BEGIN")
+                                                          .Write_loadc({ PrimitiveType::TYPE, "test.node" })
+                                                          .Write_new()
+                                                          .Write_storer(0)
+                                                          .Write_loadc({ PrimitiveType::TYPE, "test.node" })
+                                                          .Write_new()
+                                                          .Write_goto("BEGIN")
+                                                          .Write_ret()
+                                                          .ToByteCodes(module, env)))));
+
+  // 执行
+  Engine engine;
+  Int64T a = 1;
+  Int64T b = 2;
+  return engine.CallProcedure(&env, "test.main", {});
 }
 
 int main() {
   TEST(test_call);
   TEST(test_list);
+  TEST(test_gc);
   return 0;
 }

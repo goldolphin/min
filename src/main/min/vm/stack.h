@@ -6,13 +6,13 @@
 
 #include "definition.h"
 #include "module.h"
+#include "collector.h"
 #include "min/common/to_string.h"
 #include "min/common/result.h"
 #include <vector>
 #include <deque>
 
 namespace min {
-
 namespace {
 template<class T>
 class SimpleStack {
@@ -53,6 +53,10 @@ class SimpleStack {
     }
     values_.erase(values_.begin() + begin, values_.begin() + end);
     return {};
+  }
+
+  std::deque<T>* underlying() {
+    return &values_;
   }
 
  private:
@@ -188,36 +192,9 @@ class CallStack {
     return frame->pc;
   }
 
-  [[nodiscard]] Result<ByteT> ReadOp(Frame* frame) { // NOLINT(readability-convert-member-functions-to-static)
-    auto&& codes = frame->proc->assembly().GetByteCodes();
-    CountT begin = frame->pc;
-    if (begin < 0 || begin >= codes.size()) {
-      return make_error("Invalid offset: " + to_string(begin));
-    }
-    frame->pc += 1;
-    return codes[begin];
-  }
+  [[nodiscard]] Result<ByteT> ReadOp(Frame* frame);
 
-  union Count_Bytes {
-    CountT count;
-    ByteT bytes[OPERAND_WIDTH_4];
-  };
-
-  [[nodiscard]] Result<CountT> ReadOperand(Frame* frame) { // NOLINT(readability-convert-member-functions-to-static)
-    auto&& codes = frame->proc->assembly().GetByteCodes();
-    CountT begin = frame->pc;
-    CountT end = begin + OPERAND_WIDTH_4;
-    if (begin < 0 || end >= codes.size()) {
-      return make_error("Invalid offset: " + to_string(begin));
-    }
-    Count_Bytes ret = {};
-    ret.bytes[0] = codes[begin];
-    ret.bytes[1] = codes[begin+1];
-    ret.bytes[2] = codes[begin+2];
-    ret.bytes[3] = codes[begin+3];
-    frame->pc += OPERAND_WIDTH_4;
-    return ret.count;
-  }
+  [[nodiscard]] Result<CountT> ReadOperand(Frame* frame);
 
   Result<void> Goto(Frame* frame, CountT offset) { // NOLINT(readability-convert-member-functions-to-static)
     auto&& codes = frame->proc->assembly().GetByteCodes();
@@ -227,6 +204,8 @@ class CallStack {
     frame->pc = offset;
     return {};
   }
+
+  CollectorRootScanner CreateRootScanner();
 
  private:
   SimpleStack<Frame> frames_;

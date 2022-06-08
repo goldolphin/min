@@ -18,6 +18,9 @@ namespace {
 template<class T>
 class SimpleList {
  public:
+  SimpleList() = default;
+  explicit SimpleList(const std::vector<T> values) : values_(std::move(values)) {}
+
   [[nodiscard]] Result<T> Get(CountT index) const {
     if (index < 0 || index >= values_.size()) {
       return make_error("Index not found: " + to_string(index));
@@ -97,8 +100,8 @@ class Procedure {
  public:
   Procedure(std::string name,
             RetType ret_type,
-            std::initializer_list<ValueType> params,
-            std::initializer_list<ValueType> locals,
+            std::vector<ValueType> params,
+            std::vector<ValueType> locals,
             std::basic_string<ByteT> byte_codes = {});
 
   [[nodiscard]] const std::string& name() const {

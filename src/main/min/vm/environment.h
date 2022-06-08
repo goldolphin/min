@@ -12,6 +12,9 @@ namespace min {
 
 class Environment {
  public:
+  explicit Environment(Options options = Options::Default())
+    : heap_(std::move(options.heap_options), call_stack_.CreateRootScanner()) {}
+
   [[nodiscard]] Result<ManagedPtr<Module>> GetModule(const std::string& name) const;
   [[nodiscard]] Result<ManagedPtr<Module>> GetModule(const std::string& name);
   Result<void> NewModule(const std::string& name);

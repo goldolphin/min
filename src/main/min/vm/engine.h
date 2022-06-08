@@ -13,8 +13,7 @@ class Engine {
   Result<void> InvokeOp(Environment *env);
   Result<Value> CallProcedure(Environment *env,
                               const std::string& proc_name,
-                              const std::vector<Primitive>& paramps,
-                              const std::vector<RefT>& paramrs);
+                              const std::vector<Value>& params);
 };
 
 }

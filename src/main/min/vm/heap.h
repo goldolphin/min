@@ -4,50 +4,42 @@
 
 #pragma once
 
+#include "ms_collector.h"
 #include "module.h"
 #include "definition.h"
+#include "options.h"
 #include <list>
+#include <chrono>
 
 namespace min {
-
-class StructValue {
- public:
-  explicit StructValue(ManagedPtr<Struct> type) : type_(type), count_(type->assembly().Count()) {
-    fields_ = std::make_unique<Value[]>(count_);
-  }
-
-  Result<Value*> GetValue(CountT i) {
-    if (i < 0 || i >= count_) {
-      return make_error("Index out of bounds: " + to_string(i));
-    }
-    return &fields_[i];
-  }
-
-  [[nodiscard]] ManagedPtr<Struct> type() const {
-    return type_;
-  }
-
- private:
-  ManagedPtr<Struct> type_;
-  CountT count_;
-  std::unique_ptr<Value[]> fields_;
-};
-
 class Heap {
  public:
-  StructValue* New(ManagedPtr<Struct> type) {
-    return new StructValue(type);
+  explicit Heap(HeapOptions options, CollectorRootScanner root_scanner)
+    : collector_(std::move(options)),
+      root_scanner_([this, scanner = std::move(root_scanner)](CollectorMarker* marker) -> Result<void> {
+    for (auto v : singletons_) {
+      TRY(marker->Mark(v));
+    }
+    TRY(scanner.Scan(marker));
+    return {};
+  }) {}
+
+  Result<StructValue*> New(ManagedPtr<Struct> type) {
+    return collector_.New(type, &root_scanner_);
   }
 
-  StructValue* Singleton(ManagedPtr<Struct> type) {
+  Result<StructValue*> Singleton(ManagedPtr<Struct> type) {
     auto singleton = type->singleton_;
     if (singleton == nullptr) {
-      return type->singleton_ = New(type);
+      return type->singleton_ = TRY(New(type));
+    } else {
+      return singleton;
     }
-    return singleton;
   }
 
  private:
+  MsCollector collector_;
   std::list<StructValue*> singletons_;  // 记录 singleton 值，作为 gc root 的一部分
+  CollectorRootScanner root_scanner_;  // 用于获取 gc roots
 };
 }
