@@ -90,8 +90,8 @@ Result<Constant> Module::ResolveConstant(const Environment& env, assembly::Const
       result.value.int64_value = TRY(parse_number<Int64T>(result.assembly.origin));
       break;
     }
-    case PrimitiveType::DOUBLE: {
-      result.value.double_value = TRY(parse_number<DoubleT>(result.assembly.origin));
+    case PrimitiveType::FLOAT64: {
+      result.value.float64_value = TRY(parse_number<Float64T>(result.assembly.origin));
       break;
     }
     default:

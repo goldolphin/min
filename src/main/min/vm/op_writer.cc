@@ -22,6 +22,27 @@ void OpWriter::WriteOperand(CountT operand) {
   byte_codes_.push_back(cb.bytes[3]);
 }
 
+void OpWriter::WriteOp(OpCode op, CountT operand) {
+  WriteOp(op);
+  WriteOperand(operand);
+}
+
+void OpWriter::WriteOp(OpCode op, assembly::Constant constant) {
+  WriteOp(op);
+  constant_refs_[std::move(constant)].push_back(byte_codes_.size());
+  WriteOperand(0);
+}
+
+void OpWriter::WriteOp(OpCode op, std::string label) {
+  WriteOp(op);
+  label_refs_[std::move(label)].push_back(byte_codes_.size());
+  WriteOperand(0);
+}
+
+void OpWriter::NewLabel(std::string label) {
+  labels_[std::move(label)] = byte_codes_.size();
+}
+
 Result<std::basic_string<ByteT>> OpWriter::ToByteCodes(ManagedPtr<Module> module, const Environment& env)&& {
   // 替换 label
   for (auto&& lr : label_refs_) {
@@ -47,7 +68,7 @@ Result<std::basic_string<ByteT>> OpWriter::ToByteCodes(ManagedPtr<Module> module
       index = res.value();
     } else {
       index = module->ConstantCount();
-      ENSURE(module->DefineConstant(env, c));
+      TRY(module->DefineConstant(env, c));
     }
     Count_Bytes cb = { .count = index };
     for (auto&& r : cr.second) {

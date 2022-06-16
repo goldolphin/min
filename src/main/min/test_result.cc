@@ -30,7 +30,27 @@ Result<void> test() {
   return {};
 }
 
+struct Type {
+  int value;
+};
+
+struct RetType : Type {
+
+};
+
+struct ValueType : public RetType {
+
+};
+
+struct PrimitiveType : ValueType {
+
+};
+
 int main() {
+  PrimitiveType p1 {0};
+  Type t1 = p1;
+
+
   test();
   return 0;
 }

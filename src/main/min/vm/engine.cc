@@ -522,9 +522,9 @@ Result<Value> Engine::CallProcedure(Environment* env,
 
   // 4. 获取返回值
   switch (assembly.ret_type()) {
-    case assembly::Procedure::RetType::VOID:
+    case RetType::VOID:
       return Value {};
-    case assembly::Procedure::RetType::REFERENCE:
+    case RetType::REFERENCE:
       return Value {.reference = TRY(stack->PopReference(initial_frame)) };
     default:
       return Value {.primitive = TRY(stack->PopPrimitive(initial_frame)) };

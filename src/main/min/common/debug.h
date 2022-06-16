@@ -21,7 +21,7 @@ class DebugLogger {
   }
 
  public:
-  static std::basic_ostream<char>& stream() {
+  static std::ostream& stream() {
     static DebugLogger instance;
     return std::cout;
   }

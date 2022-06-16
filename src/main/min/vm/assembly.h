@@ -19,18 +19,13 @@ template<class T>
 class SimpleList {
  public:
   SimpleList() = default;
-  explicit SimpleList(const std::vector<T> values) : values_(std::move(values)) {}
+  SimpleList(const std::vector<T> values) : values_(std::move(values)) {} // NOLINT(google-explicit-constructor)
 
   [[nodiscard]] Result<T> Get(CountT index) const {
     if (index < 0 || index >= values_.size()) {
       return make_error("Index not found: " + to_string(index));
     }
     return values_[index];
-  }
-
-  template <class... Args>
-  void Put(Args&&... args) {
-    values_.template emplace_back(std::forward<Args>(args)...);
   }
 
   [[nodiscard]] CountT Count() const {
@@ -86,30 +81,22 @@ class Struct {
 
 class Procedure {
  public:
-  enum class RetType {
-    VOID = Types::VOID,
-    BYTE = Types::BYTE,
-    INT64 = Types::INT64,
-    DOUBLE = Types::DOUBLE,
-    PROCEDURE = Types::PROCEDURE,
-    TYPE = Types::TYPE,
-    FIELD = Types::FIELD,
-    REFERENCE = Types::REFERENCE,
-  };
-
- public:
-  Procedure(std::string name,
-            RetType ret_type,
-            std::vector<ValueType> params,
-            std::vector<ValueType> locals,
-            std::basic_string<ByteT> byte_codes = {});
+  explicit Procedure(std::string name) : name_(std::move(name)), ret_type_(RetType::VOID) {}
 
   [[nodiscard]] const std::string& name() const {
     return name_;
   }
 
+  void ret_type(RetType ret_type) {
+    ret_type_ = ret_type;
+  }
+
   [[nodiscard]] RetType ret_type() const {
     return ret_type_;
+  }
+
+  void SetParams(std::vector<ValueType> params) {
+    params_ = std::move(params);
   }
 
   [[nodiscard]] Result<ValueType> GetParam(CountT i) const {
@@ -120,12 +107,20 @@ class Procedure {
     return params_.Count();
   }
 
+  void SetLocals(std::vector<ValueType> locals) {
+    locals_ = std::move(locals);
+  }
+
   [[nodiscard]] Result<ValueType> GetLocal(CountT i) const {
     return locals_.Get(i);
   }
 
   [[nodiscard]] CountT LocalCount() const {
     return locals_.Count();
+  }
+
+  void SetByteCodes(std::basic_string<ByteT> byte_codes) {
+    byte_codes_ = std::move(byte_codes);
   }
 
   [[nodiscard]] const std::basic_string<ByteT>& GetByteCodes() const {

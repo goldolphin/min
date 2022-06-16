@@ -1,0 +1,20 @@
+#define MIN_VOID_TYPE                           \
+DEFINE_TYPE(VOID, 0, "void")
+
+#define MIN_PRIMITIVE_TYPES                     \
+DEFINE_TYPE(BYTE, 1, "byte")                    \
+DEFINE_TYPE(INT64, 2, "int64")                  \
+DEFINE_TYPE(FLOAT64, 3, "float64")              \
+DEFINE_TYPE(PROCEDURE, 4, "proc")               \
+DEFINE_TYPE(TYPE, 5, "type")                    \
+DEFINE_TYPE(FIELD, 6, "field")
+
+#define MIN_VALUE_TYPES                         \
+MIN_PRIMITIVE_TYPES                             \
+DEFINE_TYPE(REFERENCE, 7, "reference")
+
+#define MIN_RET_TYPES                           \
+MIN_VOID_TYPE                                   \
+MIN_VALUE_TYPES
+
+#define MIN_TYPES MIN_RET_TYPES

@@ -1,0 +1,28 @@
+## 模块定义
+#module_begin test_gc
+
+  ## 类型定义
+  #struct_begin node
+    value int64
+    next reference
+  #struct_end
+
+  #proc_begin main
+    #locals reference
+    #code_begin
+      #label BEGIN
+      ## a = new test_gc.node 这个对象存储在本地变量中，当变量被重写，之前指向的对象有机会被 GC 掉
+      loadc type "test_gc.node"
+      new
+      storer 0
+
+      ## new test_gc.node 这个对象被压入求值栈，无法被 GC
+      loadc type "test_gc.node"
+      new
+      goto BEGIN
+      ret
+    #code_end
+  #proc_end
+
+#module_end
+

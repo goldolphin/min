@@ -7,7 +7,7 @@
 namespace min {
 
 template <>
-Result<DoubleT> parse_number(const std::string& s) {
+Result<Float64T> parse_number(const std::string& s) {
   try {
     auto src = std::stod(s);
     return src;
@@ -17,7 +17,7 @@ Result<DoubleT> parse_number(const std::string& s) {
 }
 
 Result<std::tuple<std::string, std::string>> parse_procedure(const std::string& s) {
-  std::regex pattern(R"(([_a-zA-Z]\w*)\.([_a-zA-Z]\w*))");
+  static std::regex pattern(R"(([_a-zA-Z]\w*)\.([_a-zA-Z]\w*))");
   std::smatch result;
   if (std::regex_match(s, result, pattern)) {
     return std::make_tuple(result[1].str(), result[2].str());
@@ -26,7 +26,7 @@ Result<std::tuple<std::string, std::string>> parse_procedure(const std::string& 
 }
 
 Result<std::tuple<std::string, std::string>> parse_type(const std::string& s) {
-  std::regex pattern(R"(([_a-zA-Z]\w*)\.([_a-zA-Z]\w*))");
+  static std::regex pattern(R"(([_a-zA-Z]\w*)\.([_a-zA-Z]\w*))");
   std::smatch result;
   if (std::regex_match(s, result, pattern)) {
     return std::make_tuple(result[1].str(), result[2].str());
@@ -35,7 +35,7 @@ Result<std::tuple<std::string, std::string>> parse_type(const std::string& s) {
 }
 
 Result<std::tuple<std::string, std::string, std::string>> parse_field(const std::string& s) {
-  std::regex pattern(R"(([_a-zA-Z]\w*)\.([_a-zA-Z]\w*)\.([_a-zA-Z]\w*))");
+  static std::regex pattern(R"(([_a-zA-Z]\w*)\.([_a-zA-Z]\w*)\.([_a-zA-Z]\w*))");
   std::smatch result;
   if (std::regex_match(s, result, pattern)) {
     return std::make_tuple(result[1].str(), result[2].str(), result[3].str());
