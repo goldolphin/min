@@ -1,0 +1,76 @@
+DEFINE_ITEM(NOP, 0, "nop")                     //                                ->               No operation
+
+// 求值栈相关
+DEFINE_ITEM(POPP, 1, "popp")                   //                          value ->               弹出并丢弃栈顶primitive值
+DEFINE_ITEM(POPR, 2, "popr")                   //                          value ->               弹出并丢弃栈顶reference值
+
+            // 常量相关
+DEFINE_ITEM(LOADC, 3, "loadc")                 // const_index                    -> value         将primitive常量值压栈
+DEFINE_ITEM(LOADN, 4, "loadn")                 //                                -> null          将reference常量null压栈
+
+// 局部变量相关
+DEFINE_ITEM(LOADP, 5, "loadp")                 // var_index                      -> value         将primitive变量压栈
+DEFINE_ITEM(LOADR, 6, "loadr")                 // var_index                      -> value         将reference变量压栈
+DEFINE_ITEM(STOREP, 7, "storep")               // var_index                value ->               弹出栈顶primitive值到变量
+DEFINE_ITEM(STORER, 8, "storer")               // var_index                value ->               弹出栈顶reference值到变量
+
+// 过程调用
+DEFINE_ITEM(CALL, 9, "call")                   //               procedure, [arg] -> value         调用过程
+DEFINE_ITEM(RET, 10, "ret")                    //                        [value] -> []            退出过程
+
+// 控制结构
+DEFINE_ITEM(IF, 11, "if")                      // offset                   value ->               判断跳转，注意 offset 是过程内的绝对偏移
+DEFINE_ITEM(GOTO, 12, "goto")                  // offset                         ->               跳转，注意 offset 是过程内的绝对偏移
+
+// 对象操作
+DEFINE_ITEM(NEW, 13, "new")                    //                           type -> obj_ref       分配指定类型的对象，并将其 reference 值压栈
+DEFINE_ITEM(SINGLETON, 14, "singleton")        //                           type -> obj_ref       获取指定类型的单例对象，并将其 reference 值压栈
+DEFINE_ITEM(TYPEOF, 15, "typeof")              //                        obj_ref -> type          获取指定对象的 type
+DEFINE_ITEM(GETP, 16, "getp")                  //                 obj_ref, field -> value         读对象指定 primitive 字段
+DEFINE_ITEM(GETR, 17, "getr")                  //                 obj_ref, field -> value         读对象指定 reference 字段
+DEFINE_ITEM(SETP, 18, "setp")                  //          obj_ref, field, value ->               写对象指定 primitive 字段
+DEFINE_ITEM(SETR, 19, "setr")                  //          obj_ref, field, value ->               写对象指定 reference 字段
+
+// 引用运算
+DEFINE_ITEM(EQ_REF, 20, "eq_ref")
+
+// 整数运算
+DEFINE_ITEM(NEG_INT64, 21, "neg_int64")        //                          value -> result
+DEFINE_ITEM(ADD_INT64, 22, "add_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(SUB_INT64, 23, "sub_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(MUL_INT64, 24, "mul_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(DIV_INT64, 25, "div_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(MOD_INT64, 26, "mod_int64")        //                 value1, value2 -> result
+
+DEFINE_ITEM(NOT_INT64, 27, "not_int64")        //                          value -> result
+DEFINE_ITEM(AND_INT64, 28, "and_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(OR_INT64, 29, "or_int64")          //                 value1, value2 -> result
+DEFINE_ITEM(XOR_INT64, 30, "xor_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(SHL_INT64, 31, "shl_int64")        //                 value1, value2 -> result
+DEFINE_ITEM(SHR_INT64, 32, "shr_int64")        //                 value1, value2 -> result
+
+DEFINE_ITEM(EQ_INT64, 33, "eq_int64")          //                 value1, value2 -> result
+DEFINE_ITEM(NE_INT64, 34, "ne_int64")          //                 value1, value2 -> result
+DEFINE_ITEM(GT_INT64, 35, "gt_int64")          //                 value1, value2 -> result
+DEFINE_ITEM(GE_INT64, 36, "ge_int64")          //                 value1, value2 -> result
+DEFINE_ITEM(LT_INT64, 37, "lt_int64")          //                 value1, value2 -> result
+DEFINE_ITEM(LE_INT64, 38, "le_int64")          //                 value1, value2 -> result
+
+// 浮点数运算
+DEFINE_ITEM(NEG_FLOAT64, 39, "neg_float64")    //                          value -> result
+DEFINE_ITEM(ADD_FLOAT64, 40, "add_float64")    //                 value1, value2 -> result
+DEFINE_ITEM(SUB_FLOAT64, 41, "sub_float64")    //                 value1, value2 -> result
+DEFINE_ITEM(NUL_FLOAT64, 42, "nul_float64")    //                 value1, value2 -> result
+DEFINE_ITEM(DIV_FLOAT64, 43, "div_float64")    //                 value1, value2 -> result
+DEFINE_ITEM(MOD_FLOAT64, 44, "mod_float64")    //                 value1, value2 -> result
+
+DEFINE_ITEM(EQ_FLOAT64, 45, "eq_float64")      //                 value1, value2 -> result
+DEFINE_ITEM(NE_FLOAT64, 46, "ne_float64")      //                 value1, value2 -> result
+DEFINE_ITEM(GT_FLOAT64, 47, "gt_float64")      //                 value1, value2 -> result
+DEFINE_ITEM(GE_FLOAT64, 48, "ge_float64")      //                 value1, value2 -> result
+DEFINE_ITEM(LT_FLOAT64, 49, "lt_float64")      //                 value1, value2 -> result
+DEFINE_ITEM(LE_FLOAT64, 50, "le_float64")      //                 value1, value2 -> result
+
+// 数值类型转换
+DEFINE_ITEM(CONV_INT64_FLOAT64, 51, "conv_int64_float64") //               value -> result
+DEFINE_ITEM(CONV_FLOAT64_INT64, 52, "conv_float64_int64") //               value -> result

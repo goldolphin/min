@@ -27,7 +27,7 @@ Result<T> parse_number(const std::string& s) {
 }
 
 template <>
-Result<DoubleT> parse_number(const std::string& s);
+Result<Float64T> parse_number(const std::string& s);
 
 Result<std::tuple<std::string, std::string>> parse_procedure(const std::string& s);
 

@@ -8,7 +8,6 @@
 
 namespace min {
 
-#pragma pack(push, 1)
 struct CollectorInfo {
   enum class Flag : ByteT {
     UNKNOWN = 0,
@@ -19,7 +18,6 @@ struct CollectorInfo {
 
   Flag flag;
 };
-#pragma pack(pop)
 
 class StructValue {
  public:

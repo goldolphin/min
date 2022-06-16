@@ -1,5 +1,5 @@
 //
-// Created by caofuxiang on 2021/5/20.
+// Created by goldolphin on 2022/6/12.
 //
 
 #pragma once
@@ -9,11 +9,11 @@
 
 namespace min {
 
-enum class OpCode : ByteT {
+enum class DirectiveCode : ByteT {
 #define DEFINE_ITEM(id, code, str) id = code,
-#include "min/def/op.def"
+#include "min/def/directive.def"
 #undef DEFINE_ITEM
 };
 
-std::string to_string(OpCode op);
+std::string to_string(DirectiveCode di);
 }

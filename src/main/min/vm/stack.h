@@ -142,9 +142,9 @@ class CallStack {
   Result<void> PopFrame() {
     auto frame = TRY(CurrentFrame());
     switch (frame->proc->assembly().ret_type()) {
-      case assembly::Procedure::RetType::VOID:
+      case RetType::VOID:
         break;
-      case assembly::Procedure::RetType::REFERENCE:
+      case RetType::REFERENCE:
         ref_stack_.Remove(frame->ref_stack_bottom, ref_stack_.Count() - 1);
         break;
       default:

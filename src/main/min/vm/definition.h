@@ -4,8 +4,11 @@
 
 #pragma once
 
+#include "min/def/types.def"
+#include "min/common/result.h"
 #include <memory>
 #include <cstdint>
+#include <string>
 
 namespace min {
 
@@ -17,56 +20,46 @@ typedef std::int32_t CountT;
 
 typedef std::uint8_t ByteT;
 typedef std::int64_t Int64T;
-typedef double DoubleT;
+typedef long double Float64T;
 typedef const Procedure* ProcT;
 typedef const Struct* TypeT;
 typedef StructValue* RefT;
 
 constexpr CountT OPERAND_WIDTH_4 = 4;
 
-namespace {
-struct Types {
-  enum {
-    // Void type
-    VOID = 0,
-
-    // Primitive type
-    BYTE = 1,
-    INT64 = 2,
-    DOUBLE = 3,
-    PROCEDURE = 4,
-    TYPE = 5,
-    FIELD = 6,
-
-    // RefT type
-    REFERENCE = 7,
-  };
-};
-}
-
-enum class ValueType {
-  BYTE = Types::BYTE,
-  INT64 = Types::INT64,
-  DOUBLE = Types::DOUBLE,
-  PROCEDURE = Types::PROCEDURE,
-  TYPE = Types::TYPE,
-  FIELD = Types::FIELD,
-  REFERENCE = Types::REFERENCE,
+enum class Type : ByteT {
+#define DEFINE_TYPE(id, code, str)  id = code,
+  MIN_TYPES
+#undef DEFINE_TYPE
 };
 
-enum class PrimitiveType {
-  BYTE = Types::BYTE,
-  INT64 = Types::INT64,
-  DOUBLE = Types::DOUBLE,
-  PROCEDURE = Types::PROCEDURE,
-  TYPE = Types::TYPE,
-  FIELD = Types::FIELD,
+enum class RetType : ByteT {
+#define DEFINE_TYPE(id, code, str) id = static_cast<ByteT>(Type::id),
+  MIN_RET_TYPES
+#undef DEFINE_TYPE
 };
+
+enum class ValueType : ByteT {
+#define DEFINE_TYPE(id, code, str) id = static_cast<ByteT>(Type::id),
+  MIN_VALUE_TYPES
+#undef DEFINE_TYPE
+};
+
+enum class PrimitiveType : ByteT {
+#define DEFINE_TYPE(id, code, str) id = static_cast<ByteT>(Type::id),
+  MIN_PRIMITIVE_TYPES
+#undef DEFINE_TYPE
+};
+
+std::string type_to_string(Type type);
+Result<RetType> to_ret_type(Type type);
+Result<ValueType> to_value_type(Type type);
+Result<PrimitiveType> to_primitive_type(Type type);
 
 union Primitive {
   ByteT byte_value;
   Int64T int64_value;
-  DoubleT double_value;
+  Float64T float64_value;
   ProcT procedure_value;
   TypeT type_value;
   CountT field_value;

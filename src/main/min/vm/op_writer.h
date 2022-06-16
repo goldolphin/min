@@ -16,10 +16,14 @@ class OpWriter {
  public:
   void WriteOp(OpCode op);
   void WriteOperand(CountT operand);
+  void WriteOp(OpCode op, CountT operand);
+  void WriteOp(OpCode op, assembly::Constant constant);
+  void WriteOp(OpCode op, std::string label);
+  void NewLabel(std::string label);
   Result<std::basic_string<ByteT>> ToByteCodes(ManagedPtr<Module> module, const Environment& env) &&;
 
-  OpWriter&& DefineLabel(const std::string& name) && {
-    labels_[name] = byte_codes_.size();
+  OpWriter&& label(std::string label) && {
+    NewLabel(std::move(label));
     return std::move(*this);
   }
 
@@ -39,15 +43,12 @@ class OpWriter {
   }
 
   OpWriter&& Write_loadc(CountT operand) && {
-    WriteOp(OpCode::LOADC);
-    WriteOperand(operand);
+    WriteOp(OpCode::LOADC, operand);
     return std::move(*this);
   }
 
   OpWriter&& Write_loadc(const assembly::Constant& constant) && {
-    WriteOp(OpCode::LOADC);
-    constant_refs_[constant].push_back(byte_codes_.size());
-    WriteOperand(0);
+    WriteOp(OpCode::LOADC, constant);
     return std::move(*this);
   }
 
@@ -57,26 +58,22 @@ class OpWriter {
   }
 
   OpWriter&& Write_loadp(CountT operand) && {
-    WriteOp(OpCode::LOADP);
-    WriteOperand(operand);
+    WriteOp(OpCode::LOADP, operand);
     return std::move(*this);
   }
 
   OpWriter&& Write_loadr(CountT operand) && {
-    WriteOp(OpCode::LOADR);
-    WriteOperand(operand);
+    WriteOp(OpCode::LOADR, operand);
     return std::move(*this);
   }
 
   OpWriter&& Write_storep(CountT operand) && {
-    WriteOp(OpCode::STOREP);
-    WriteOperand(operand);
+    WriteOp(OpCode::STOREP, operand);
     return std::move(*this);
   }
 
   OpWriter&& Write_storer(CountT operand) && {
-    WriteOp(OpCode::STORER);
-    WriteOperand(operand);
+    WriteOp(OpCode::STORER, operand);
     return std::move(*this);
   }
 
@@ -91,28 +88,22 @@ class OpWriter {
   }
 
   OpWriter&& Write_if(CountT operand) && {
-    WriteOp(OpCode::IF);
-    WriteOperand(operand);
+    WriteOp(OpCode::IF, operand);
     return std::move(*this);
   }
 
   OpWriter&& Write_if(const std::string& label) && {
-    WriteOp(OpCode::IF);
-    label_refs_[label].push_back(byte_codes_.size());
-    WriteOperand(0);
+    WriteOp(OpCode::IF, label);
     return std::move(*this);
   }
 
   OpWriter&& Write_goto(CountT operand) && {
-    WriteOp(OpCode::GOTO);
-    WriteOperand(operand);
+    WriteOp(OpCode::GOTO, operand);
     return std::move(*this);
   }
 
   OpWriter&& Write_goto(const std::string& label) && {
-    WriteOp(OpCode::GOTO);
-    label_refs_[label].push_back(byte_codes_.size());
-    WriteOperand(0);
+    WriteOp(OpCode::GOTO, label);
     return std::move(*this);
   }
 
@@ -245,7 +236,6 @@ class OpWriter {
     WriteOp(OpCode::LE_INT64);
     return std::move(*this);
   }
-
 
  private:
   std::basic_string<ByteT> byte_codes_;

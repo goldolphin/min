@@ -19,36 +19,36 @@
     #locals reference reference reference
     #code_begin
       ## a = new hello.node
-      loadc 2
+      loadc type "hello.node"
       new
       storer 0
 
       ## a.value = 1000
-      loadc 0
-      loadc 4
+      loadc int64 "1000"
+      loadc field "hello.node.value"
       loadr 0
       setp
 
       ## a.next = null
       loadn
-      loadc 5
+      loadc field "hello.node.next"
       loadr 0
       setr
 
       ## b = new hello.node
-      loadc 2
+      loadc type "hello.node"
       new
       storer 1
 
       ## b.value = 2000
-      loadc 1
-      loadc 4
+      loadc int64 "2000"
+      loadc field "hello.node.value"
       loadr 1
       setp
 
       ## b.next = a
       loadr 0
-      loadc 5
+      loadc field "hello.node.next"
       loadr 1
       setr
 
@@ -57,40 +57,29 @@
       storer 2
 
       ## if (head == null) break
-BEGIN:
+      #label BEGIN
       loadn
       loadr 2
       eq_ref
       if END
 
       ## print(head.value)
-      loadc 4
+      loadc field "hello.node.value"
       loadr 2
       getp
-      loadc 3
+      loadc proc "hello.print"
       call
 
       ## head = head.next
-      loadc 5
+      loadc field "hello.node.next"
       loadr 2
       getr
       storer 2
 
       goto BEGIN
 
-END:
+      #label END
       ret
     #code_end
   #proc_end
-
-  ## 常量定义
-  #const_begin
-    int64 "1000"
-    int64 "2000"
-    type "hello.node"
-    proc "hello.print"
-    field "hello.node.value"
-    field "hello.node.next"
-  #const_end
-
 #module_end

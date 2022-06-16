@@ -14,31 +14,34 @@ Result<void> test_call() {
   Environment env;
   TRY(env.NewModule("test"));
   auto module = TRY(env.GetModule("test"));
-  TRY(module->DefineProcedure(assembly::Procedure("add",
-                                                  min::assembly::Procedure::RetType::INT64,
-                                                  { ValueType::INT64, ValueType::INT64 },
-                                                  { },
-                                                  TRY(OpWriter()
-                                                  .Write_add_int64()
-                                                  .Write_ret()
-                                                  .ToByteCodes(module, env)))));
-  TRY(module->DefineProcedure(assembly::Procedure("mul4",
-                                                  min::assembly::Procedure::RetType::INT64,
-                                                  { ValueType::INT64 },
-                                                  { ValueType::INT64 },
-                                                  TRY(OpWriter()
-                                                                .Write_storep(0)
-                                                                .Write_loadp(0)
-                                                                .Write_loadp(0)
-                                                                .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
-                                                                .Write_call()
-                                                                .Write_storep(0)
-                                                                .Write_loadp(0)
-                                                                .Write_loadp(0)
-                                                                .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
-                                                                .Write_call()
-                                                                .Write_ret()
-                                                                .ToByteCodes(module, env)))));
+
+  assembly::Procedure proc_add("add");
+  proc_add.ret_type(RetType::INT64);
+  proc_add.SetParams({ ValueType::INT64, ValueType::INT64 });
+  proc_add.SetByteCodes(TRY(OpWriter()
+                                .Write_add_int64()
+                                .Write_ret()
+                                .ToByteCodes(module, env)));
+  TRY(module->DefineProcedure(std::move(proc_add)));
+
+  assembly::Procedure proc_mul4("mul4");
+  proc_mul4.ret_type(RetType::INT64);
+  proc_mul4.SetParams({ ValueType::INT64 });
+  proc_mul4.SetLocals({ ValueType::INT64 });
+  proc_mul4.SetByteCodes(TRY(OpWriter()
+                                 .Write_storep(0)
+                                 .Write_loadp(0)
+                                 .Write_loadp(0)
+                                 .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
+                                 .Write_call()
+                                 .Write_storep(0)
+                                 .Write_loadp(0)
+                                 .Write_loadp(0)
+                                 .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
+                                 .Write_call()
+                                 .Write_ret()
+                                 .ToByteCodes(module, env)));
+  TRY(module->DefineProcedure(std::move(proc_mul4)));
 
   // 执行
   Engine engine;
@@ -72,82 +75,83 @@ Result<void> test_list() {
   Environment env;
   TRY(env.NewModule("hello"));
   auto module = TRY(env.GetModule("hello"));
+
   assembly::Struct struct_node ("node");
   struct_node.Put({"value", ValueType::INT64});
   struct_node.Put({"next", ValueType::REFERENCE});
   TRY(module->DefineStruct(std::move(struct_node)));
-  TRY(module->DefineProcedure(assembly::Procedure("print",
-                                                  min::assembly::Procedure::RetType::VOID,
-                                                  { ValueType::INT64 },
-                                                  {}),
+
+  assembly::Procedure proc_print("print");
+  proc_print.SetParams({ ValueType::INT64 });
+  TRY(module->DefineProcedure(std::move(proc_print),
                               std::make_unique<PrintImpl>()));
-  TRY(module->DefineProcedure(assembly::Procedure("main",
-                                                  min::assembly::Procedure::RetType::VOID,
-                                                  {},
-                                                  { ValueType::REFERENCE, ValueType::REFERENCE, ValueType::REFERENCE },
-                                                  TRY(OpWriter()
-                                                                 // a = new hello.node
-                                                                .Write_loadc({ PrimitiveType::TYPE, "hello.node" })
-                                                                .Write_new()
-                                                                .Write_storer(0)
 
-                                                                // a.value = 1000
-                                                                .Write_loadc({ PrimitiveType::INT64, "1000" })
-                                                                .Write_loadc({ PrimitiveType::FIELD, "hello.node.value" })
-                                                                .Write_loadr(0)
-                                                                .Write_setp()
+  assembly::Procedure proc_main("main");
+  proc_main.SetLocals({ ValueType::REFERENCE, ValueType::REFERENCE, ValueType::REFERENCE });
+  proc_main.SetByteCodes(TRY(OpWriter()
+                                 // a = new hello.node
+                                 .Write_loadc({PrimitiveType::TYPE, "hello.node"})
+                                 .Write_new()
+                                 .Write_storer(0)
 
-                                                                // a.next = null
-                                                                .Write_loadn()
-                                                                .Write_loadc({ PrimitiveType::FIELD, "hello.node.next" })
-                                                                .Write_loadr(0)
-                                                                .Write_setr()
+                                     // a.value = 1000
+                                 .Write_loadc({PrimitiveType::INT64, "1000"})
+                                 .Write_loadc({PrimitiveType::FIELD, "hello.node.value"})
+                                 .Write_loadr(0)
+                                 .Write_setp()
 
-                                                                // b = new hello.node
-                                                                .Write_loadc({ PrimitiveType::TYPE, "hello.node" })
-                                                                .Write_new()
-                                                                .Write_storer(1)
+                                     // a.next = null
+                                 .Write_loadn()
+                                 .Write_loadc({PrimitiveType::FIELD, "hello.node.next"})
+                                 .Write_loadr(0)
+                                 .Write_setr()
 
-                                                                // b.value = 2000
-                                                                .Write_loadc({ PrimitiveType::INT64, "2000" })
-                                                                .Write_loadc({ PrimitiveType::FIELD, "hello.node.value" })
-                                                                .Write_loadr(1)
-                                                                .Write_setp()
+                                     // b = new hello.node
+                                 .Write_loadc({PrimitiveType::TYPE, "hello.node"})
+                                 .Write_new()
+                                 .Write_storer(1)
 
-                                                                // b.next = a
-                                                                .Write_loadr(0)
-                                                                .Write_loadc({ PrimitiveType::FIELD, "hello.node.next" })
-                                                                .Write_loadr(1)
-                                                                .Write_setr()
+                                     // b.value = 2000
+                                 .Write_loadc({PrimitiveType::INT64, "2000"})
+                                 .Write_loadc({PrimitiveType::FIELD, "hello.node.value"})
+                                 .Write_loadr(1)
+                                 .Write_setp()
 
-                                                                // head = b
-                                                                .Write_loadr(1)
-                                                                .Write_storer(2)
+                                     // b.next = a
+                                 .Write_loadr(0)
+                                 .Write_loadc({PrimitiveType::FIELD, "hello.node.next"})
+                                 .Write_loadr(1)
+                                 .Write_setr()
 
-                                                                // if (head == null) break
-                                                                .DefineLabel("BEGIN")
-                                                                .Write_loadn()
-                                                                .Write_loadr(2)
-                                                                .Write_eq_ref()
-                                                                .Write_if("END")
+                                     // head = b
+                                 .Write_loadr(1)
+                                 .Write_storer(2)
 
-                                                                // print(head.value)
-                                                                .Write_loadc({ PrimitiveType::FIELD, "hello.node.value" })
-                                                                .Write_loadr(2)
-                                                                .Write_getp()
-                                                                .Write_loadc({ PrimitiveType::PROCEDURE, "hello.print" })
-                                                                .Write_call()
+                                     // if (head == null) break
+                                 .label("BEGIN")
+                                 .Write_loadn()
+                                 .Write_loadr(2)
+                                 .Write_eq_ref()
+                                 .Write_if("END")
 
-                                                                // head = head.next
-                                                                .Write_loadc({ PrimitiveType::FIELD, "hello.node.next" })
-                                                                .Write_loadr(2)
-                                                                .Write_getr()
-                                                                .Write_storer(2)
+                                     // print(head.value)
+                                 .Write_loadc({PrimitiveType::FIELD, "hello.node.value"})
+                                 .Write_loadr(2)
+                                 .Write_getp()
+                                 .Write_loadc({PrimitiveType::PROCEDURE, "hello.print"})
+                                 .Write_call()
 
-                                                                .Write_goto("BEGIN")
-                                                                .DefineLabel("END")
-                                                                .Write_ret()
-                                                                .ToByteCodes(module, env)))));
+                                     // head = head.next
+                                 .Write_loadc({PrimitiveType::FIELD, "hello.node.next"})
+                                 .Write_loadr(2)
+                                 .Write_getr()
+                                 .Write_storer(2)
+
+                                 .Write_goto("BEGIN")
+                                 .label("END")
+                                 .Write_ret()
+                                 .ToByteCodes(module, env)));
+  TRY(module->DefineProcedure(std::move(proc_main)));
 
   // 执行
   Engine engine;
@@ -161,24 +165,25 @@ Result<void> test_gc() {
   Environment env(std::move(options));
   TRY(env.NewModule("test"));
   auto module = TRY(env.GetModule("test"));
+
   assembly::Struct struct_node ("node");
   struct_node.Put({"value", ValueType::INT64});
   struct_node.Put({"next", ValueType::REFERENCE});
   TRY(module->DefineStruct(std::move(struct_node)));
-  TRY(module->DefineProcedure(assembly::Procedure("main",
-                                                  min::assembly::Procedure::RetType::VOID,
-                                                  { },
-                                                  { ValueType::REFERENCE },
-                                                  TRY(OpWriter()
-                                                          .DefineLabel("BEGIN")
-                                                          .Write_loadc({ PrimitiveType::TYPE, "test.node" })
-                                                          .Write_new()
-                                                          .Write_storer(0)
-                                                          .Write_loadc({ PrimitiveType::TYPE, "test.node" })
-                                                          .Write_new()
-                                                          .Write_goto("BEGIN")
-                                                          .Write_ret()
-                                                          .ToByteCodes(module, env)))));
+
+  assembly::Procedure proc_main("main");
+  proc_main.SetLocals({ ValueType::REFERENCE });
+  proc_main.SetByteCodes(TRY(OpWriter()
+                                 .label("BEGIN")
+                                 .Write_loadc({ PrimitiveType::TYPE, "test.node" })
+                                 .Write_new()
+                                 .Write_storer(0)
+                                 .Write_loadc({ PrimitiveType::TYPE, "test.node" })
+                                 .Write_new()
+                                 .Write_goto("BEGIN")
+                                 .Write_ret()
+                                 .ToByteCodes(module, env)));
+  TRY(module->DefineProcedure(std::move(proc_main)));
 
   // 执行
   Engine engine;
