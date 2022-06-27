@@ -20,7 +20,6 @@ struct Constant {
   Primitive value;
 };
 
-class Environment;
 class Module;
 
 class Struct : public EnableManaged<Struct> {
@@ -105,14 +104,8 @@ class Module : public EnableManaged<Module> {
 
   [[nodiscard]] Result<const Constant&> GetConstant(CountT i) const;
   [[nodiscard]] Result<CountT> FindConstant(const assembly::Constant& constant) const;
-  Result<void> DefineConstant(const Environment& env, assembly::Constant constant);
+  Result<void> DefineConstant(assembly::Constant constant, Primitive value);
   [[nodiscard]] CountT ConstantCount() const;
-
-  static Result<Managed<Module>> FromAssembly(const Environment& env, const assembly::Module& assembly);
-
- private:
-  [[nodiscard]] Result<ManagedPtr<Module>> GetModule(const Environment& env, const std::string& name) const;
-  Result<Constant> ResolveConstant(const Environment& env, assembly::Constant constant);
 
  private:
   std::string name_;

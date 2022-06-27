@@ -1,9 +1,7 @@
 //
 // Created by goldolphin on 2022/4/11.
 //
-#include "environment.h"
 #include "module.h"
-#include "string_utils.h"
 
 namespace min {
 
@@ -35,96 +33,23 @@ Result<const Constant&> Module::GetConstant(CountT i) const {
 }
 
 Result<CountT> Module::FindConstant(const assembly::Constant& constant) const {
-  return constant_pool_.Find(constant);
+  auto index = constant_pool_.Find(constant);
+  if (index < 0) {
+    return make_error("Constant not found: " + to_string(constant));
+  }
+  return index;
 }
 
-Result<void> Module::DefineConstant(const Environment& env, assembly::Constant constant) {
-  if (constant_pool_.Find(constant).ok()) {
+Result<void> Module::DefineConstant(assembly::Constant constant, Primitive value) {
+  if (constant_pool_.Find(constant) >= 0) {
     return make_error("Constant already exists: " + min::to_string(constant));
   }
-  auto c = TRY(ResolveConstant(env, std::move(constant)));
-  return constant_pool_.Put(c.assembly, c);
+  Constant c = {std::move(constant), value};
+  return constant_pool_.Put(c.assembly, std::move(c));
 }
 
 CountT Module::ConstantCount() const {
   return constant_pool_.Count();
-}
-
-Result<ManagedPtr<Module>> Module::GetModule(const Environment& env, const std::string& name) const {
-  return (name == this->name()) ? managed_ptr() : TRY(env.GetModule(name));
-}
-
-Result<Constant> Module::ResolveConstant(const Environment& env, assembly::Constant constant) {
-  Constant result{};
-  result.assembly = std::move(constant);
-  switch (result.assembly.type) {
-    case PrimitiveType::PROCEDURE: {
-      std::string m, p;
-      std::tie(m, p) = TRY(parse_procedure(result.assembly.origin));
-      auto module = TRY(GetModule(env, m));
-      auto proc = TRY(module->GetProcedure(p));
-      result.value.procedure_value = proc.get();
-      break;
-    }
-    case PrimitiveType::TYPE: {
-      std::string m, t;
-      std::tie(m, t) = TRY(parse_type(result.assembly.origin));
-      auto module = TRY(GetModule(env, m));
-      auto type = TRY(module->GetStruct(t));
-      result.value.type_value = type.get();
-      break;
-    }
-    case PrimitiveType::FIELD: {
-      std::string m, t, f;
-      std::tie(m, t, f) = TRY(parse_field(result.assembly.origin));
-      auto module = TRY(GetModule(env, m));
-      auto type = TRY(module->GetStruct(t));
-      result.value.field_value = TRY(type->assembly().Find(f));
-      break;
-    }
-    case PrimitiveType::BYTE: {
-      result.value.byte_value = TRY(parse_number<ByteT>(result.assembly.origin));
-      break;
-    }
-    case PrimitiveType::INT64: {
-      result.value.int64_value = TRY(parse_number<Int64T>(result.assembly.origin));
-      break;
-    }
-    case PrimitiveType::FLOAT64: {
-      result.value.float64_value = TRY(parse_number<Float64T>(result.assembly.origin));
-      break;
-    }
-    default:
-      return make_error("Unknown type: " + std::to_string(static_cast<int>(result.assembly.type)));
-  }
-  return result;
-}
-
-Result<Managed<Module>> Module::FromAssembly(const Environment& env, const assembly::Module& assembly) {
-  auto result = Module::Create(assembly.name());
-
-  // 1. Index structs.
-  auto struct_count = assembly.StructCount();
-  for (CountT i = 0; i < struct_count; ++i) {
-    const auto& t = TRY(assembly.GetStruct(i));
-    TRY(result.ptr()->DefineStruct(t));
-  }
-
-  // 2. Index procedures.
-  auto proc_count = assembly.StructCount();
-  for (CountT i = 0; i < proc_count; ++i) {
-    const auto& t = TRY(assembly.GetProcedure(i));
-    TRY(result.ptr()->DefineProcedure(t));
-  }
-
-  // 3. Resolve constants.
-  auto constant_count = assembly.ConstantCount();
-  for (CountT i = 0; i < constant_count; ++i) {
-    auto&& c = TRY(assembly.GetConstant(i));
-    TRY(result.ptr()->DefineConstant(env, c));
-  }
-
-  return result;
 }
 
 }

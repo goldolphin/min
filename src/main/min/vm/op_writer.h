@@ -5,10 +5,11 @@
 #pragma once
 
 #include "op.h"
-#include "module.h"
+#include "module_table.h"
 #include "min/common/result.h"
 #include <map>
 #include <vector>
+#include <functional>
 
 namespace min {
 
@@ -20,7 +21,7 @@ class OpWriter {
   void WriteOp(OpCode op, assembly::Constant constant);
   void WriteOp(OpCode op, std::string label);
   void NewLabel(std::string label);
-  Result<std::basic_string<ByteT>> ToByteCodes(ManagedPtr<Module> module, const Environment& env) &&;
+  Result<std::basic_string<ByteT>> ToByteCodes(const ModuleTable& module_table, ManagedPtr<Module> module) &&;
 
   OpWriter&& label(std::string label) && {
     NewLabel(std::move(label));

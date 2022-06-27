@@ -11,7 +11,11 @@ Result<const Struct::Field&> Struct::Get(CountT i) const {
 }
 
 Result<CountT> Struct::Find(const std::string& field_name) const {
-  return fields_.Find(field_name);
+  auto index = fields_.Find(field_name);
+  if (index < 0) {
+    return make_error("Field not found: " + field_name);
+  }
+  return index;
 }
 
 Result<void> Struct::Put(Struct::Field field) {
@@ -27,7 +31,11 @@ Result<const Struct&> Module::GetStruct(CountT i) const {
 }
 
 Result<CountT> Module::FindStruct(const std::string& name) const {
-  return structs_.Find(name);
+  auto index = structs_.Find(name);
+  if (index < 0) {
+    return make_error("Struct not found: " + name);
+  }
+  return index;
 }
 
 Result<void> Module::PutStruct(Struct s) {
@@ -43,7 +51,11 @@ Result<const Procedure&> Module::GetProcedure(CountT i) const {
 }
 
 Result<CountT> Module::FindProcedure(const std::string& name) const {
-  return procedures_.Find(name);
+  auto index = procedures_.Find(name);
+  if (index < 0) {
+    return make_error("Procedure not found: " + name);
+  }
+  return index;
 }
 
 Result<void> Module::PutProcedure(Procedure proc) {
@@ -59,7 +71,11 @@ Result<const Constant&> Module::GetConstant(CountT i) const {
 }
 
 Result<CountT> Module::FindConstant(const Constant& constant) const {
-  return constants_.Find(constant);
+  auto index = constants_.Find(constant);
+  if (index < 0) {
+    return make_error("Constant not found: " + to_string(constant));
+  }
+  return index;
 }
 
 Result<void> Module::PutConstant(Constant constant) {
@@ -75,7 +91,11 @@ Result<const Module&> Assembly::GetModule(CountT i) const {
 }
 
 Result<CountT> Assembly::FindModule(const std::string& name) const {
-  return modules_.Find(name);
+  auto index = modules_.Find(name);
+  if (index < 0) {
+    return make_error("Module not found: " + name);
+  }
+  return index;
 }
 
 Result<void> Assembly::PutModule(Module module) {

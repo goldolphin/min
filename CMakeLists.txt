@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(src/main)
 
 # min lib
-file(GLOB_RECURSE MIN_LIB_SOURCE_FILES "src/main/min/io/*.cc" "src/main/min/vm/*.cc" "src/main/min/common/*.cc")
+file(GLOB_RECURSE MIN_LIB_SOURCE_FILES "src/main/min/lib/*.cc" "src/main/min/io/*.cc" "src/main/min/vm/*.cc" "src/main/min/common/*.cc")
 add_library(min ${MIN_LIB_SOURCE_FILES})
 
 # minas assembler & repl

@@ -60,7 +60,7 @@ DEFINE_ITEM(LE_INT64, 38, "le_int64")          //                 value1, value2
 DEFINE_ITEM(NEG_FLOAT64, 39, "neg_float64")    //                          value -> result
 DEFINE_ITEM(ADD_FLOAT64, 40, "add_float64")    //                 value1, value2 -> result
 DEFINE_ITEM(SUB_FLOAT64, 41, "sub_float64")    //                 value1, value2 -> result
-DEFINE_ITEM(NUL_FLOAT64, 42, "nul_float64")    //                 value1, value2 -> result
+DEFINE_ITEM(MUL_FLOAT64, 42, "mul_float64")    //                 value1, value2 -> result
 DEFINE_ITEM(DIV_FLOAT64, 43, "div_float64")    //                 value1, value2 -> result
 DEFINE_ITEM(MOD_FLOAT64, 44, "mod_float64")    //                 value1, value2 -> result
 

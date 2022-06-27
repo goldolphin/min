@@ -1,10 +1,10 @@
-# min
+# MIN
 
 A simple bytecode instruction set and its embeddable VM written in modern C++(17).
 
 ## Features
-1. Builtin modules and procedures
-2. Support compound types and runtime type info
+1. Builtin module system
+2. Support procedures, compound types and runtime type info
 3. Accurate garbage collection
 4. Native extension
 
@@ -28,10 +28,16 @@ $ cmake ..
 $ make -j
 ```
 ### Play
+* Floating-point calculation
+```shell
+$ ./minas run < example/min/test_float.minas
+```
+
 * Create and traverse a singly linked list
 ```shell
 $ ./minas run < example/min/test_list.minas
 ```
+
 * Test gc
 ```shell
 $ ./minas run < example/min/test_gc.minas

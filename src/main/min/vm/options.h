@@ -5,6 +5,7 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 
 namespace min {
 
@@ -20,6 +21,7 @@ struct HeapOptions {
 
 struct Options {
   HeapOptions heap_options;
+  std::string reserved;
 
   static Options Default() {
     return { HeapOptions::Default() };

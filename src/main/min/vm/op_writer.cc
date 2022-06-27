@@ -43,7 +43,7 @@ void OpWriter::NewLabel(std::string label) {
   labels_[std::move(label)] = byte_codes_.size();
 }
 
-Result<std::basic_string<ByteT>> OpWriter::ToByteCodes(ManagedPtr<Module> module, const Environment& env)&& {
+Result<std::basic_string<ByteT>> OpWriter::ToByteCodes(const ModuleTable& module_table, ManagedPtr<Module> module)&& {
   // 替换 label
   for (auto&& lr : label_refs_) {
     auto it = labels_.find(lr.first);
@@ -68,7 +68,7 @@ Result<std::basic_string<ByteT>> OpWriter::ToByteCodes(ManagedPtr<Module> module
       index = res.value();
     } else {
       index = module->ConstantCount();
-      TRY(module->DefineConstant(env, c));
+      TRY(module_table.ResolveAndDefineConstant(module, c));
     }
     Count_Bytes cb = { .count = index };
     for (auto&& r : cr.second) {

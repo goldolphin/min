@@ -1,0 +1,49 @@
+## 模块定义
+#module_begin test_float
+
+  #proc_begin add
+    #ret float64
+    #params float64 float64
+    #code_begin
+      add_float64
+      ret
+    #code_end
+  #proc_end
+
+  #proc_begin mul4
+    #ret float64
+    #params float64
+    #locals float64
+    #code_begin
+      storep 0
+      loadp 0
+      loadp 0
+      loadc proc "test_float.add"
+      call
+      storep 0
+      loadp 0
+      loadp 0
+      loadc proc "test_float.add"
+      call
+      ret
+    #code_end
+  #proc_end
+
+  #proc_begin main
+    #code_begin
+      loadc float64 "1.01"
+      loadc proc "test_float.mul4"
+      call
+      loadc proc "io.print_float64"
+      call
+      loadc float64 "1.01"
+      loadc float64 "4"
+      mul_float64
+      loadc proc "io.print_float64"
+      call
+      ret
+    #code_end
+  #proc_end
+
+#module_end
+

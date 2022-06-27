@@ -8,14 +8,13 @@
 namespace min {
 
 Result<void> AssemblyInterpreterHandler::ModuleBegin(std::string name) {
-  auto ret = env_.GetModule(name);
+  auto ret = engine_->module_table()->GetModule(name);
   if (ret.ok()) {
     DEBUG_LOG("## Use existing module: " << name << std::endl);
     current_module_ = ret.value();
   } else {
     DEBUG_LOG("## Define new module: " << name << std::endl);
-    TRY(env_.NewModule(name));
-    current_module_ = TRY(env_.GetModule(name));
+    current_module_ = TRY(engine_->module_table()->NewModule(name));
   }
   return {};
 }
@@ -23,7 +22,7 @@ Result<void> AssemblyInterpreterHandler::ModuleBegin(std::string name) {
 Result<void> AssemblyInterpreterHandler::ModuleEnd() {
   DEBUG_LOG("## Complete module" << std::endl);
   DEBUG_LOG("## Try to run main()" << std::endl);
-  return engine_.CallProcedure(&env_, current_module_->name() + ".main", {});
+  return engine_->CallProcedure(current_module_->name() + ".main", {});
 }
 
 Result<void> AssemblyInterpreterHandler::StructBegin(std::string name) {
@@ -75,7 +74,7 @@ Result<void> AssemblyInterpreterHandler::CodeBegin() {
 
 Result<void> AssemblyInterpreterHandler::CodeEnd() {
   DEBUG_LOG("## Complete code block" << std::endl);
-  current_proc_->SetByteCodes(TRY(std::move(*current_op_writer_.release()).ToByteCodes(current_module_, env_)));
+  current_proc_->SetByteCodes(TRY(std::move(*current_op_writer_.release()).ToByteCodes(*engine_->module_table(), current_module_)));
   return {};
 }
 

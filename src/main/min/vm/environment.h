@@ -6,19 +6,17 @@
 
 #include "stack.h"
 #include "heap.h"
-#include "module.h"
+#include "module_table.h"
 
 namespace min {
 
 class Environment {
  public:
-  explicit Environment(Options options = Options::Default())
-    : heap_(std::move(options.heap_options), call_stack_.CreateRootScanner()) {}
+  Environment(ModuleTable* module_table, Options options);
 
-  [[nodiscard]] Result<ManagedPtr<Module>> GetModule(const std::string& name) const;
-  [[nodiscard]] Result<ManagedPtr<Module>> GetModule(const std::string& name);
-  Result<void> NewModule(const std::string& name);
-  Result<void> LoadModule(const assembly::Module& assembly);
+  [[nodiscard]] ModuleTable* module_table() {
+    return module_table_;
+  }
 
   [[nodiscard]] CallStack* call_stack() {
     return &call_stack_;
@@ -29,7 +27,7 @@ class Environment {
   }
 
  private:
-  IndexedList<Managed<Module>> modules_;
+  ModuleTable* module_table_;
   CallStack call_stack_;
   Heap heap_;
 };

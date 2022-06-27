@@ -11,9 +11,9 @@ using namespace min;
 
 Result<void> test_call() {
   // 定义代码
-  Environment env;
-  TRY(env.NewModule("test"));
-  auto module = TRY(env.GetModule("test"));
+  auto engine = TRY(Engine::Create());
+  auto module_table = engine->module_table();
+  auto module = TRY(module_table->NewModule("test"));
 
   assembly::Procedure proc_add("add");
   proc_add.ret_type(RetType::INT64);
@@ -21,7 +21,7 @@ Result<void> test_call() {
   proc_add.SetByteCodes(TRY(OpWriter()
                                 .Write_add_int64()
                                 .Write_ret()
-                                .ToByteCodes(module, env)));
+                                .ToByteCodes(*module_table, module)));
   TRY(module->DefineProcedure(std::move(proc_add)));
 
   assembly::Procedure proc_mul4("mul4");
@@ -40,20 +40,19 @@ Result<void> test_call() {
                                  .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
                                  .Write_call()
                                  .Write_ret()
-                                 .ToByteCodes(module, env)));
+                                 .ToByteCodes(*module_table, module)));
   TRY(module->DefineProcedure(std::move(proc_mul4)));
 
   // 执行
-  Engine engine;
   Int64T a = 1;
   Int64T b = 2;
-  auto v1 = TRY(engine.CallProcedure(&env, "test.add", { {{.int64_value = a}}, {{.int64_value = b}} }));
+  auto v1 = TRY(engine->CallProcedure("test.add", { {{.int64_value = a}}, {{.int64_value = b}} }));
   std::cout << v1.primitive.int64_value << std::endl;
 
-  auto v2 = TRY(engine.CallProcedure(&env, "test.mul4", {{ v1.primitive }}));
+  auto v2 = TRY(engine->CallProcedure("test.mul4", {{ v1.primitive }}));
   std::cout << v2.primitive.int64_value << std::endl;
 
-  auto v3 = TRY(engine.CallProcedure(&env, "test.mul4", {{ v2.primitive }}));
+  auto v3 = TRY(engine->CallProcedure("test.mul4", {{ v2.primitive }}));
   std::cout << v3.primitive.int64_value << std::endl;
 
   return {};
@@ -72,9 +71,9 @@ class PrintImpl : public native::Procedure {
 
 Result<void> test_list() {
   // 定义代码
-  Environment env;
-  TRY(env.NewModule("hello"));
-  auto module = TRY(env.GetModule("hello"));
+  auto engine = TRY(Engine::Create());
+  auto module_table = engine->module_table();
+  auto module = TRY(module_table->NewModule("hello"));
 
   assembly::Struct struct_node ("node");
   struct_node.Put({"value", ValueType::INT64});
@@ -150,21 +149,20 @@ Result<void> test_list() {
                                  .Write_goto("BEGIN")
                                  .label("END")
                                  .Write_ret()
-                                 .ToByteCodes(module, env)));
+                                 .ToByteCodes(*module_table, module)));
   TRY(module->DefineProcedure(std::move(proc_main)));
 
   // 执行
-  Engine engine;
-  return engine.CallProcedure(&env, "hello.main", {});
+  return engine->CallProcedure("hello.main", {});
 }
 
 Result<void> test_gc() {
   // 定义代码
   auto options = Options::Default();
   options.heap_options.capacity = 1000;
-  Environment env(std::move(options));
-  TRY(env.NewModule("test"));
-  auto module = TRY(env.GetModule("test"));
+  auto engine = TRY(Engine::Create(std::move(options)));
+  auto module_table = engine->module_table();
+  auto module = TRY(module_table->NewModule("test"));
 
   assembly::Struct struct_node ("node");
   struct_node.Put({"value", ValueType::INT64});
@@ -182,14 +180,13 @@ Result<void> test_gc() {
                                  .Write_new()
                                  .Write_goto("BEGIN")
                                  .Write_ret()
-                                 .ToByteCodes(module, env)));
+                                 .ToByteCodes(*module_table, module)));
   TRY(module->DefineProcedure(std::move(proc_main)));
 
   // 执行
-  Engine engine;
   Int64T a = 1;
   Int64T b = 2;
-  return engine.CallProcedure(&env, "test.main", {});
+  return engine->CallProcedure("test.main", {});
 }
 
 int main() {

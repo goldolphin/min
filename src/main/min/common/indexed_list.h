@@ -19,7 +19,7 @@ class IndexedList {
   [[nodiscard]] Result<T*> Get(CountT index);
   [[nodiscard]] Result<const T&> Get(const Key& key) const;
   [[nodiscard]] Result<T*> Get(const Key& key);
-  [[nodiscard]] Result<CountT> Find(const Key& key) const;
+  [[nodiscard]] CountT Find(const Key& key) const;
   template <class... Args>
   Result<void> Put(const Key& key, Args&&... args);
   [[nodiscard]] CountT Count() const;
@@ -47,19 +47,27 @@ Result<T*> IndexedList<T, Key, Compare>::Get(CountT index) {
 
 template<class T, class Key, class Compare>
 Result<const T&> IndexedList<T, Key, Compare>::Get(const Key& key) const {
-  return Get(TRY(Find(key)));
+  auto index = Find(key);
+  if (index < 0) {
+    return make_error("Key not found: " + to_string(key));
+  }
+  return Get(index);
 }
 
 template<class T, class Key, class Compare>
 Result<T*> IndexedList<T, Key, Compare>::Get(const Key& key) {
-  return Get(TRY(Find(key)));
+  auto index = Find(key);
+  if (index < 0) {
+    return make_error("Key not found: " + to_string(key));
+  }
+  return Get(index);
 }
 
 template<class T, class Key, class Compare>
-Result<CountT> IndexedList<T, Key, Compare>::Find(const Key& key) const {
+CountT IndexedList<T, Key, Compare>::Find(const Key& key) const {
   auto it = index_.find(key);
   if (it == index_.end()) {
-    return make_error("Key not found: " + to_string(key));
+    return -1;
   }
   return it->second;
 }

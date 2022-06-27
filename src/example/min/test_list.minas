@@ -8,13 +8,6 @@
   #struct_end
 
   ## 过程定义
-  #proc_begin print
-    #params int64
-    #code_begin
-      ret
-    #code_end
-  #proc_end
-
   #proc_begin main
     #locals reference reference reference
     #code_begin
@@ -67,7 +60,7 @@
       loadc field "test_list.node.value"
       loadr 2
       getp
-      loadc proc "test_list.print"
+      loadc proc "io.print_int64"
       call
 
       ## head = head.next

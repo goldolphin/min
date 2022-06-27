@@ -20,7 +20,10 @@ typedef std::int32_t CountT;
 
 typedef std::uint8_t ByteT;
 typedef std::int64_t Int64T;
-typedef long double Float64T;
+
+static_assert(sizeof(double) * CHAR_BIT == 64, "64-bit float is assumed.");
+typedef double Float64T;
+
 typedef const Procedure* ProcT;
 typedef const Struct* TypeT;
 typedef StructValue* RefT;

@@ -13,7 +13,8 @@ Result<void> run(int argc, char** argv) {
   }
   auto mode = argv[1];
 
-  AssemblyInterpreterHandler handler;
+  auto engine = TRY(Engine::Create());
+  AssemblyInterpreterHandler handler(std::move(engine));
   AssemblyReader reader(&handler, &std::cin);
   return reader.Process();
 }
