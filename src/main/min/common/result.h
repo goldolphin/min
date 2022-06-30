@@ -4,14 +4,27 @@
 
 #pragma once
 
+#include <variant>
 #include <optional>
 #include <string>
 #include <utility>
 #include <iostream>
+#include <list>
 
 namespace min {
 
 class Error {
+ public:
+  struct Frame {
+    const char* function{};
+    const char* file{};
+    int line{};
+  };
+
+  struct Context {
+    std::list<Frame> frames;
+  };
+
  public:
   Error() = default;
   Error(Error&&) noexcept = default;
@@ -20,40 +33,42 @@ class Error {
   Error& operator=(const Error&) = delete;
 
   Error(std::string msg, const char* function, const char* file, int line)
-      : msg_(std::move(msg)), function_(function), file_(file), line_(line) {}
-
-  [[nodiscard]] bool ok() const {
-    return msg_.empty();
+      : msg_(std::move(msg)) {
+#ifndef NDEBUG
+    auto ctx = context();
+    ctx->frames.clear();
+    ctx->frames.emplace_back(Frame {function, file, line});
+#endif
   }
 
   [[nodiscard]] const std::string& message() const {
     return msg_;
   }
 
-  [[nodiscard]] const char* function() const {
-    return function_;
+  [[nodiscard]] Context* context() const { // NOLINT(readability-convert-member-functions-to-static)
+    thread_local Context ctx;
+    return &ctx;
   }
 
-  [[nodiscard]] const char* file() const {
-    return file_;
-  }
-
-  [[nodiscard]] int line() const {
-    return line_;
-  }
-
-  void ensure() const {
-    if (!ok()) {
-      std::cerr << "Abort: " << message() << " (" << function() << ", " << file() << ":" << line() << ")" << std::endl;
-      std::abort();
+  void Abort() const {
+    std::cerr << "Abort: " << message() << "\nRecent backtrace:\n";
+    for (auto&& f : context()->frames) {
+      std::cerr << "  " << f.function << ", " << f.file << ":" << f.line << '\n';
     }
+    std::cerr << std::flush;
+    std::abort();
+  }
+
+  Error&& AppendFrame(const char* function, const char* file, int line) && {
+#ifndef NDEBUG
+    auto ctx = context();
+    ctx->frames.emplace_back(Frame {function, file, line});
+    return std::move(*this);
+#endif
   }
 
  private:
   std::string msg_;
-  const char* function_{};
-  const char* file_{};
-  int line_{};
 };
 
 template <class T>
@@ -64,34 +79,37 @@ class Result {
   Result& operator=(Result&&) = delete;
   Result& operator=(const Result&) = delete;
 
-  Result(T value) : value_(std::move(value)) { } // NOLINT(google-explicit-constructor)
-  Result(Error error) : error_(std::move(error)) { } // NOLINT(google-explicit-constructor)
+  Result(T value) : v_(std::move(value)) { } // NOLINT(google-explicit-constructor)
+  Result(Error error) : v_(std::move(error)) { } // NOLINT(google-explicit-constructor)
 
   [[nodiscard]] const T& value() const& {
-    error_.ensure();
-    return *value_;
+    return std::get<1>(v_);
   }
 
   [[nodiscard]] T&& value() && {
-    error_.ensure();
-    return *std::move(value_);
+    return std::get<1>(std::move(v_));
   }
 
   [[nodiscard]] bool ok() const {
-    return error_.ok();
+    return v_.index() != 0;
   }
 
   [[nodiscard]] const Error& error() const& {
-    return error_;
+    return std::get<0>(v_);
   }
 
   Error&& error() && {
-    return std::move(error_);
+    return std::get<0>(std::move(v_));
+  }
+
+  void Ensure() const {
+    if (!ok()) {
+      error().Abort();
+    }
   }
 
  private:
-  std::optional<T> value_;
-  Error error_;
+  std::variant<Error, T> v_;
 };
 
 template<class T>
@@ -102,29 +120,33 @@ class Result<T&> {
   Result& operator=(Result&&) = delete;
   Result& operator=(const Result&) = delete;
 
-  Result(T& value) : value_(&value) { } // NOLINT(google-explicit-constructor)
-  Result(Error error) : error_(std::move(error)) { } // NOLINT(google-explicit-constructor)
+  Result(T& value) : v_(&value) { } // NOLINT(google-explicit-constructor)
+  Result(Error error) : v_(std::move(error)) { } // NOLINT(google-explicit-constructor)
 
   [[nodiscard]] T& value() const {
-    error_.ensure();
-    return *value_;
+    return *std::get<1>(v_);
   }
 
   [[nodiscard]] bool ok() const {
-    return error_.ok();
+    return v_.index() != 0;
   }
 
   [[nodiscard]] const Error& error() const& {
-    return error_;
+    return std::get<0>(v_);
   }
 
   Error&& error() && {
-    return std::move(error_);
+    return std::get<0>(std::move(v_));
+  }
+
+  void Ensure() const {
+    if (!ok()) {
+      error().Abort();
+    }
   }
 
  private:
-  T* value_;
-  Error error_;
+  std::variant<Error, T*> v_;
 };
 
 template<>
@@ -136,7 +158,7 @@ class Result<void> {
   Result& operator=(const Result&) = delete;
 
   Result() = default;
-  Result(Error error) : error_(std::move(error)) { } // NOLINT(google-explicit-constructor)
+  Result(Error error) : v_(std::move(error)) { } // NOLINT(google-explicit-constructor)
 
   /**
    * 用于将其他任意类型的Result<T> 转换为该类型，忽略其值，仅保留错误与否的信息
@@ -144,26 +166,34 @@ class Result<void> {
    * @param r
    */
   template<class R>
-  Result(Result<R>&& r): error_(std::move(r).error()) { } // NOLINT(google-explicit-constructor)
-
-  void value() const {
-    error_.ensure();
+  Result(Result<R>&& r) { // NOLINT(google-explicit-constructor)
+    if (!r.ok()) {
+      v_.emplace(std::move(r).error());
+    }
   }
 
+  void value() const { }
+
   [[nodiscard]] bool ok() const {
-    return error_.ok();
+    return !v_;
   }
 
   [[nodiscard]] const Error& error() const& {
-    return error_;
+    return *v_;
   }
 
   Error&& error() && {
-    return std::move(error_);
+    return *std::move(v_);
+  }
+
+  void Ensure() const {
+    if (!ok()) {
+      error().Abort();
+    }
   }
 
  private:
-  Error error_;
+  std::optional<Error> v_;
 };
 
 #define make_error(msg) Error(std::move(msg), __FUNCTION__, __FILE__, __LINE__)
@@ -176,17 +206,17 @@ class Result<void> {
  * 3. 简化实现，这里使用了 g++ 的 statement expr 扩展。该扩展的返回值是 by value 的，如要正确处理左值引用，需要通过重载包装一个
  * 传递指针的 wrapper 对象（比如通过 Result<const T&> 特化）用于返回，以避免拷贝。
  */
-#define TRY(r) ({                                                         \
-std::remove_cv_t<std::remove_reference_t<decltype(r)>>&& _r = (r);        \
-if (!_r.ok()) {                                                           \
-  return std::move(_r).error();                                           \
-}                                                                         \
-std::move(_r);                                                            \
+#define TRY(r) ({                                                                         \
+std::remove_cv_t<std::remove_reference_t<decltype(r)>>&& _r = (r);                        \
+if (!_r.ok()) {                                                                           \
+  return std::move(_r).error().AppendFrame(__FUNCTION__, __FILE__, __LINE__);             \
+}                                                                                         \
+std::move(_r);                                                                            \
 }).value()
 
 /**
  * 确认一个 Result 对象是否成功，如否则退出程序
  */
-#define ENSURE(r) (r).error().ensure()
+#define ENSURE(r) (r).Ensure()
 
 }

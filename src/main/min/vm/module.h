@@ -48,7 +48,7 @@ class Procedure : public EnableManaged<Procedure> {
   Procedure(ManagedPtr<Module> module, assembly::Procedure assembly, std::unique_ptr<native::Procedure> native_impl)
     : module_(module), assembly_(std::move(assembly)), paramp_num_(0), paramr_num_(0), native_impl_(std::move(native_impl)) {
     for (CountT i = 0; i < assembly_.ParamCount(); ++i) {
-      if (assembly_.GetParam(i).value() != ValueType::REFERENCE) {
+      if (assembly_.GetParam(i).value() != ValueType::REF) {
         paramp_num_ += 1;
       } else {
         paramr_num_ += 1;

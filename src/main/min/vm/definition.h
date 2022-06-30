@@ -63,7 +63,7 @@ union Primitive {
   ByteT byte_value;
   Int64T int64_value;
   Float64T float64_value;
-  ProcT procedure_value;
+  ProcT proc_value;
   TypeT type_value;
   CountT field_value;
 };

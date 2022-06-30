@@ -32,12 +32,12 @@ Result<void> test_call() {
                                  .Write_storep(0)
                                  .Write_loadp(0)
                                  .Write_loadp(0)
-                                 .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
+                                 .Write_loadc({ PrimitiveType::PROC, "test.add" })
                                  .Write_call()
                                  .Write_storep(0)
                                  .Write_loadp(0)
                                  .Write_loadp(0)
-                                 .Write_loadc({ PrimitiveType::PROCEDURE, "test.add" })
+                                 .Write_loadc({ PrimitiveType::PROC, "test.add" })
                                  .Write_call()
                                  .Write_ret()
                                  .ToByteCodes(*module_table, module)));
@@ -77,7 +77,7 @@ Result<void> test_list() {
 
   assembly::Struct struct_node ("node");
   struct_node.Put({"value", ValueType::INT64});
-  struct_node.Put({"next", ValueType::REFERENCE});
+  struct_node.Put({"next", ValueType::REF});
   TRY(module->DefineStruct(std::move(struct_node)));
 
   assembly::Procedure proc_print("print");
@@ -86,7 +86,7 @@ Result<void> test_list() {
                               std::make_unique<PrintImpl>()));
 
   assembly::Procedure proc_main("main");
-  proc_main.SetLocals({ ValueType::REFERENCE, ValueType::REFERENCE, ValueType::REFERENCE });
+  proc_main.SetLocals({ ValueType::REF, ValueType::REF, ValueType::REF });
   proc_main.SetByteCodes(TRY(OpWriter()
                                  // a = new hello.node
                                  .Write_loadc({PrimitiveType::TYPE, "hello.node"})
@@ -137,7 +137,7 @@ Result<void> test_list() {
                                  .Write_loadc({PrimitiveType::FIELD, "hello.node.value"})
                                  .Write_loadr(2)
                                  .Write_getp()
-                                 .Write_loadc({PrimitiveType::PROCEDURE, "hello.print"})
+                                 .Write_loadc({PrimitiveType::PROC, "hello.print"})
                                  .Write_call()
 
                                      // head = head.next
@@ -166,11 +166,11 @@ Result<void> test_gc() {
 
   assembly::Struct struct_node ("node");
   struct_node.Put({"value", ValueType::INT64});
-  struct_node.Put({"next", ValueType::REFERENCE});
+  struct_node.Put({"next", ValueType::REF});
   TRY(module->DefineStruct(std::move(struct_node)));
 
   assembly::Procedure proc_main("main");
-  proc_main.SetLocals({ ValueType::REFERENCE });
+  proc_main.SetLocals({ ValueType::REF });
   proc_main.SetByteCodes(TRY(OpWriter()
                                  .label("BEGIN")
                                  .Write_loadc({ PrimitiveType::TYPE, "test.node" })

@@ -82,14 +82,14 @@ static Result<void> invoke_call(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto v = TRY(stack->PopPrimitive(frame));
-  if (v.procedure_value->native_impl() == nullptr) {
-    DEBUG_LOG("## Enter procedure: " << v.procedure_value->assembly().name() << "()" << std::endl);
-    return stack->PushFrame(v.procedure_value->managed_ptr());
+  if (v.proc_value->native_impl() == nullptr) {
+    DEBUG_LOG("## Enter procedure: " << v.proc_value->assembly().name() << "()" << std::endl);
+    return stack->PushFrame(v.proc_value->managed_ptr());
   } else {
-    DEBUG_LOG("## Enter native procedure: " << v.procedure_value->assembly().name() << "()" << std::endl);
-    TRY(stack->PushFrame(v.procedure_value->managed_ptr()));
-    v.procedure_value->native_impl()->Call(env);
-    DEBUG_LOG("## Exit native procedure: " << v.procedure_value->assembly().name() << "()" << std::endl);
+    DEBUG_LOG("## Enter native procedure: " << v.proc_value->assembly().name() << "()" << std::endl);
+    TRY(stack->PushFrame(v.proc_value->managed_ptr()));
+    v.proc_value->native_impl()->Call(env);
+    DEBUG_LOG("## Exit native procedure: " << v.proc_value->assembly().name() << "()" << std::endl);
     return stack->PopFrame();
   }
 }
@@ -662,7 +662,7 @@ Result<Value> Executor::CallProcedure(Environment* env,
     return make_error("Incorrect param count: " + to_string(params.size()));
   }
   for (CountT i = 0; i < param_count; ++i) {
-    if (TRY(proc->assembly().GetParam(i)) != ValueType::REFERENCE) {
+    if (TRY(proc->assembly().GetParam(i)) != ValueType::REF) {
       TRY(stack->PushPrimitive(initial_frame, params[i].primitive));
     } else {
       TRY(stack->PushReference(initial_frame, params[i].reference));
@@ -670,7 +670,7 @@ Result<Value> Executor::CallProcedure(Environment* env,
   }
 
   // 2. 将函数引用压栈
-  TRY(stack->PushPrimitive(initial_frame, { .procedure_value = proc.get() }));
+  TRY(stack->PushPrimitive(initial_frame, { .proc_value = proc.get() }));
 
   // 3. 执行代码
   TRY(invoke_call(env)); // 插入执行 call 指令
@@ -682,7 +682,7 @@ Result<Value> Executor::CallProcedure(Environment* env,
   switch (assembly.ret_type()) {
     case RetType::VOID:
       return Value {};
-    case RetType::REFERENCE:
+    case RetType::REF:
       return Value {.reference = TRY(stack->PopReference(initial_frame)) };
     default:
       return Value {.primitive = TRY(stack->PopPrimitive(initial_frame)) };

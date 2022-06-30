@@ -28,12 +28,12 @@ static Result<Primitive> ResolveConstant(const ModuleTable& module_table,
                                          const assembly::Constant& constant) {
   Primitive value{};
   switch (constant.type) {
-    case PrimitiveType::PROCEDURE: {
+    case PrimitiveType::PROC: {
       std::string m, p;
       std::tie(m, p) = TRY(parse_procedure(constant.origin));
       auto module = TRY(GetModule0(module_table, target_module, m));
       auto proc = TRY(module->GetProcedure(p));
-      value.procedure_value = proc.get();
+      value.proc_value = proc.get();
       break;
     }
     case PrimitiveType::TYPE: {

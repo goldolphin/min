@@ -144,7 +144,7 @@ class CallStack {
     switch (frame->proc->assembly().ret_type()) {
       case RetType::VOID:
         break;
-      case RetType::REFERENCE:
+      case RetType::REF:
         ref_stack_.Remove(frame->ref_stack_bottom, ref_stack_.Count() - 1);
         break;
       default:

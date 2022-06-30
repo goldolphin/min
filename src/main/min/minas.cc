@@ -8,7 +8,7 @@
 using namespace min;
 
 Result<void> run(int argc, char** argv) {
-  if (argc < 1) {
+  if (argc < 2) {
     return make_error("Invalid arguments.\nUsage: " + to_string(argv[0]) + " run | compile\n");
   }
   auto mode = argv[1];

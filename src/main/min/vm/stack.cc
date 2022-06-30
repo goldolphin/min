@@ -49,7 +49,7 @@ CollectorRootScanner CallStack::CreateRootScanner() {
       if (proc.get() != nullptr) {
         auto&& assembly = proc->assembly();
         for (CountT i = 0; i < assembly.LocalCount(); ++i) {
-          if (TRY(assembly.GetLocal(i)) == ValueType::REFERENCE) {
+          if (TRY(assembly.GetLocal(i)) == ValueType::REF) {
             TRY(marker->Mark(f.locals.GetLocal(i).value()->reference));
           }
         }

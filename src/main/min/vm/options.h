@@ -13,6 +13,7 @@ struct HeapOptions {
   size_t capacity;
   double collect_threshold;
   std::chrono::milliseconds min_collect_interval;
+  std::string reserved;
 
   static HeapOptions Default() {
     return {1024 * 1024, 0.8, std::chrono::milliseconds(10)};

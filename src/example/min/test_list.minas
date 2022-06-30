@@ -4,12 +4,12 @@
   ## 类型定义
   #struct_begin node
     value int64
-    next reference
+    next ref
   #struct_end
 
   ## 过程定义
   #proc_begin main
-    #locals reference reference reference
+    #locals ref ref ref
     #code_begin
       ## a = new test_list.node
       loadc type "test_list.node"
