@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include "definition.h"
-#include "assembly.h"
-#include "native.h"
+#include "min/vm/definition.h"
+#include "min/vm/assembly.h"
 #include "min/common/managed.h"
 #include <map>
 #include <set>
@@ -30,6 +29,7 @@ class Struct : public EnableManaged<Struct> {
   [[nodiscard]] ManagedPtr<Module> module() const {
     return module_;
   }
+
   [[nodiscard]] const assembly::Struct& assembly() const {
     return assembly_;
   }
@@ -43,10 +43,13 @@ class Struct : public EnableManaged<Struct> {
   StructValue* singleton_;
 };
 
+class Environment;
+using NativeProcedure = Result<void> (*)(Environment* env);
+
 class Procedure : public EnableManaged<Procedure> {
  public:
-  Procedure(ManagedPtr<Module> module, assembly::Procedure assembly, std::unique_ptr<native::Procedure> native_impl)
-    : module_(module), assembly_(std::move(assembly)), paramp_num_(0), paramr_num_(0), native_impl_(std::move(native_impl)) {
+  Procedure(ManagedPtr<Module> module, assembly::Procedure assembly, NativeProcedure native_impl)
+    : module_(module), assembly_(std::move(assembly)), paramp_num_(0), paramr_num_(0), native_impl_(native_impl) {
     for (CountT i = 0; i < assembly_.ParamCount(); ++i) {
       if (assembly_.GetParam(i).value() != ValueType::REF) {
         paramp_num_ += 1;
@@ -75,8 +78,8 @@ class Procedure : public EnableManaged<Procedure> {
     return paramr_num_;
   }
 
-  [[nodiscard]] const native::Procedure* native_impl() const {
-    return native_impl_.get();
+  [[nodiscard]] NativeProcedure native_impl() const {
+    return native_impl_;
   }
 
  private:
@@ -84,7 +87,7 @@ class Procedure : public EnableManaged<Procedure> {
   const assembly::Procedure assembly_;
   CountT paramp_num_;
   CountT paramr_num_;
-  std::unique_ptr<native::Procedure> native_impl_;
+  NativeProcedure native_impl_;
 };
 
 class Module : public EnableManaged<Module> {
@@ -100,7 +103,7 @@ class Module : public EnableManaged<Module> {
 
   [[nodiscard]] Result<ManagedPtr<Procedure>> GetProcedure(const std::string& name) const;
   Result<void> DefineProcedure(assembly::Procedure proc);
-  Result<void> DefineProcedure(assembly::Procedure proc, std::unique_ptr<native::Procedure> native_impl);
+  Result<void> DefineProcedure(assembly::Procedure proc, NativeProcedure native_impl);
 
   [[nodiscard]] Result<const Constant&> GetConstant(CountT i) const;
   [[nodiscard]] Result<CountT> FindConstant(const assembly::Constant& constant) const;

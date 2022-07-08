@@ -46,28 +46,25 @@ Result<void> test_call() {
   // 执行
   Int64T a = 1;
   Int64T b = 2;
-  auto v1 = TRY(engine->CallProcedure("test.add", { {{.int64_value = a}}, {{.int64_value = b}} }));
-  std::cout << v1.primitive.int64_value << std::endl;
+  auto v1 = TRY(engine->CallProcedure("test.add", { {{.int64 = {a}}}, {{.int64 = {b}}} }));
+  std::cout << v1.primitive.int64.value << std::endl;
 
   auto v2 = TRY(engine->CallProcedure("test.mul4", {{ v1.primitive }}));
-  std::cout << v2.primitive.int64_value << std::endl;
+  std::cout << v2.primitive.int64.value << std::endl;
 
   auto v3 = TRY(engine->CallProcedure("test.mul4", {{ v2.primitive }}));
-  std::cout << v3.primitive.int64_value << std::endl;
+  std::cout << v3.primitive.int64.value << std::endl;
 
   return {};
 }
 
-class PrintImpl : public native::Procedure {
- public:
-  Result<void> Call(Environment* env) const override {
-    auto stack = env->call_stack();
-    auto frame = TRY(stack->CurrentFrame());
-    auto v = TRY(stack->PopPrimitive(frame));
-    std::cout << "print: " << v.int64_value << std::endl;
-    return {};
-  }
-};
+Result<void> PrintImpl(Environment* env) {
+auto stack = env->call_stack();
+auto frame = TRY(stack->CurrentFrame());
+auto v = TRY(stack->PopPrimitive(frame));
+std::cout << "print: " << v.int64.value << std::endl;
+return {};
+}
 
 Result<void> test_list() {
   // 定义代码
@@ -82,8 +79,7 @@ Result<void> test_list() {
 
   assembly::Procedure proc_print("print");
   proc_print.SetParams({ ValueType::INT64 });
-  TRY(module->DefineProcedure(std::move(proc_print),
-                              std::make_unique<PrintImpl>()));
+  TRY(module->DefineProcedure(std::move(proc_print), PrintImpl));
 
   assembly::Procedure proc_main("main");
   proc_main.SetLocals({ ValueType::REF, ValueType::REF, ValueType::REF });

@@ -169,11 +169,11 @@ class CallStack {
     return primitive_stack_.Pop();
   }
 
-  Result<void> PushReference(Frame* frame, RefT value) {
+  Result<void> PushReference(Frame* frame, min_ref_t value) {
     return ref_stack_.Push(value);
   }
 
-  Result<RefT> PopReference(Frame* frame) {
+  Result<min_ref_t> PopReference(Frame* frame) {
     if (ref_stack_.Count() <= frame->ref_stack_bottom) {
       return make_error("Reference stack empty.");
     }
@@ -210,7 +210,7 @@ class CallStack {
  private:
   SimpleStack<Frame> frames_;
   SimpleStack<Primitive> primitive_stack_;
-  SimpleStack<RefT> ref_stack_;
+  SimpleStack<min_ref_t> ref_stack_;
 };
 
 }

@@ -40,7 +40,7 @@ CollectorRootScanner CallStack::CreateRootScanner() {
   return CollectorRootScanner([this](CollectorMarker* marker) -> Result<void> {
     // 标记求值栈
     for (auto v : *ref_stack_.underlying()) {
-      TRY(marker->Mark(v));
+      TRY(marker->Mark(v.value));
     }
 
     // 标记LocalTable
@@ -50,7 +50,7 @@ CollectorRootScanner CallStack::CreateRootScanner() {
         auto&& assembly = proc->assembly();
         for (CountT i = 0; i < assembly.LocalCount(); ++i) {
           if (TRY(assembly.GetLocal(i)) == ValueType::REF) {
-            TRY(marker->Mark(f.locals.GetLocal(i).value()->reference));
+            TRY(marker->Mark(f.locals.GetLocal(i).value()->reference.value));
           }
         }
       }

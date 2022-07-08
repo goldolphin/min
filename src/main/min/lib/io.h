@@ -4,12 +4,10 @@
 
 #pragma once
 
-#include "min/vm/assembly.h"
 #include "min/common/result.h"
 #include "min/vm/module_table.h"
 
 namespace min::lib::io {
-
-Result<void> LoadLibIo(ModuleTable* module_table);
+extern struct LibIoInitializer initializer;
 
 }

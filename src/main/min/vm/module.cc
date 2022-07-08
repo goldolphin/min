@@ -23,8 +23,8 @@ Result<void> Module::DefineProcedure(assembly::Procedure proc) {
   return procedures_table_.Put(m.ptr()->assembly().name(), std::move(m));
 }
 
-Result<void> Module::DefineProcedure(assembly::Procedure proc, std::unique_ptr<native::Procedure> native_impl) {
-  auto m = Procedure::Create(managed_ptr(), std::move(proc), std::move(native_impl));
+Result<void> Module::DefineProcedure(assembly::Procedure proc, NativeProcedure native_impl) {
+  auto m = Procedure::Create(managed_ptr(), std::move(proc), native_impl);
   return procedures_table_.Put(m.ptr()->assembly().name(), std::move(m));
 }
 

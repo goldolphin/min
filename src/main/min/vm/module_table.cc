@@ -17,6 +17,15 @@ Result<ManagedPtr<Module>> ModuleTable::NewModule(const std::string& name) {
   return ptr;
 }
 
+Result<ManagedPtr<Module>> ModuleTable::GetOrNewModule(const std::string& name) {
+  auto index = modules_.Find(name);
+  if (index < 0) {
+    return NewModule(name);
+  } else {
+    return TRY(modules_.Get(index))->ptr();
+  }
+}
+
 static Result<ManagedPtr<Module>> GetModule0(const ModuleTable& module_table,
                                             ManagedPtr<Module> target_module,
                                             const std::string& name) {
@@ -33,7 +42,7 @@ static Result<Primitive> ResolveConstant(const ModuleTable& module_table,
       std::tie(m, p) = TRY(parse_procedure(constant.origin));
       auto module = TRY(GetModule0(module_table, target_module, m));
       auto proc = TRY(module->GetProcedure(p));
-      value.proc_value = proc.get();
+      value.proc.value = proc.get();
       break;
     }
     case PrimitiveType::TYPE: {
@@ -41,7 +50,7 @@ static Result<Primitive> ResolveConstant(const ModuleTable& module_table,
       std::tie(m, t) = TRY(parse_type(constant.origin));
       auto module = TRY(GetModule0(module_table, target_module, m));
       auto type = TRY(module->GetStruct(t));
-      value.type_value = type.get();
+      value.type.value = type.get();
       break;
     }
     case PrimitiveType::FIELD: {
@@ -49,19 +58,19 @@ static Result<Primitive> ResolveConstant(const ModuleTable& module_table,
       std::tie(m, t, f) = TRY(parse_field(constant.origin));
       auto module = TRY(GetModule0(module_table, target_module, m));
       auto type = TRY(module->GetStruct(t));
-      value.field_value = TRY(type->assembly().Find(f));
+      value.field.value = TRY(type->assembly().Find(f));
       break;
     }
     case PrimitiveType::BYTE: {
-      value.byte_value = TRY(parse_number<ByteT>(constant.origin));
+      value.byte.value = TRY(parse_number<ByteT>(constant.origin));
       break;
     }
     case PrimitiveType::INT64: {
-      value.int64_value = TRY(parse_number<Int64T>(constant.origin));
+      value.int64.value = TRY(parse_number<Int64T>(constant.origin));
       break;
     }
     case PrimitiveType::FLOAT64: {
-      value.float64_value = TRY(parse_number<Float64T>(constant.origin));
+      value.float64.value = TRY(parse_number<Float64T>(constant.origin));
       break;
     }
     default:

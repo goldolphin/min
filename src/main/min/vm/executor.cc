@@ -39,7 +39,7 @@ static Result<void> invoke_loadc(Environment* env, CountT operand) {
 static Result<void> invoke_loadn(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
-  return stack->PushReference(frame, nullptr);
+  return stack->PushReference(frame, { nullptr });
 }
 
 static Result<void> invoke_loadp(Environment* env, CountT operand) {
@@ -82,14 +82,14 @@ static Result<void> invoke_call(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto v = TRY(stack->PopPrimitive(frame));
-  if (v.proc_value->native_impl() == nullptr) {
-    DEBUG_LOG("## Enter procedure: " << v.proc_value->assembly().name() << "()" << std::endl);
-    return stack->PushFrame(v.proc_value->managed_ptr());
+  if (v.proc.value->native_impl() == nullptr) {
+    DEBUG_LOG("## Enter procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
+    return stack->PushFrame(v.proc.value->managed_ptr());
   } else {
-    DEBUG_LOG("## Enter native procedure: " << v.proc_value->assembly().name() << "()" << std::endl);
-    TRY(stack->PushFrame(v.proc_value->managed_ptr()));
-    v.proc_value->native_impl()->Call(env);
-    DEBUG_LOG("## Exit native procedure: " << v.proc_value->assembly().name() << "()" << std::endl);
+    DEBUG_LOG("## Enter native procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
+    TRY(stack->PushFrame(v.proc.value->managed_ptr()));
+    v.proc.value->native_impl()(env);
+    DEBUG_LOG("## Exit native procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
     return stack->PopFrame();
   }
 }
@@ -104,7 +104,7 @@ static Result<void> invoke_if(Environment* env, CountT operand) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto v = TRY(stack->PopPrimitive(frame));
-  if (v.byte_value != 0) {
+  if (v.byte.value != 0) {
     return stack->Goto(frame, operand);
   }
   return {};
@@ -121,8 +121,8 @@ static Result<void> invoke_new(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto t = TRY(stack->PopPrimitive(frame));
   auto heap = env->heap();
-  auto r = TRY(heap->New(t.type_value->managed_ptr()));
-  return stack->PushReference(frame, r);
+  auto r = TRY(heap->New(t.type.value->managed_ptr()));
+  return stack->PushReference(frame, { r });
 }
 
 static Result<void> invoke_singleton(Environment* env) {
@@ -130,16 +130,16 @@ static Result<void> invoke_singleton(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto t = TRY(stack->PopPrimitive(frame));
   auto heap = env->heap();
-  auto r = TRY(heap->Singleton(t.type_value->managed_ptr()));
-  return stack->PushReference(frame, r);
+  auto r = TRY(heap->Singleton(t.type.value->managed_ptr()));
+  return stack->PushReference(frame, { r });
 }
 
 static Result<void> invoke_typeof(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto r = TRY(stack->PopReference(frame));
-  auto t = r->type();
-  return stack->PushPrimitive(frame, { .type_value = t.get() });
+  auto t = r.value->type();
+  return stack->PushPrimitive(frame, { .type = { t.get() }});
 }
 
 static Result<void> invoke_getp(Environment* env) {
@@ -147,7 +147,7 @@ static Result<void> invoke_getp(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto r = TRY(stack->PopReference(frame));
   auto f = TRY(stack->PopPrimitive(frame));
-  auto v = TRY(r->GetValue(f.field_value));
+  auto v = TRY(r.value->GetValue(f.field.value));
   return stack->PushPrimitive(frame, v->primitive);
 }
 
@@ -156,7 +156,7 @@ static Result<void> invoke_getr(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto r = TRY(stack->PopReference(frame));
   auto f = TRY(stack->PopPrimitive(frame));
-  auto v = TRY(r->GetValue(f.field_value));
+  auto v = TRY(r.value->GetValue(f.field.value));
   return stack->PushReference(frame, v->reference);
 }
 
@@ -165,7 +165,7 @@ static Result<void> invoke_setp(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto r = TRY(stack->PopReference(frame));
   auto f = TRY(stack->PopPrimitive(frame));
-  auto v = TRY(r->GetValue(f.field_value));
+  auto v = TRY(r.value->GetValue(f.field.value));
   v->primitive = TRY(stack->PopPrimitive(frame));
   return {};
 }
@@ -175,7 +175,7 @@ static Result<void> invoke_setr(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto r = TRY(stack->PopReference(frame));
   auto f = TRY(stack->PopPrimitive(frame));
-  auto v = TRY(r->GetValue(f.field_value));
+  auto v = TRY(r.value->GetValue(f.field.value));
   v->reference = TRY(stack->PopReference(frame));
   return {};
 }
@@ -185,14 +185,14 @@ static Result<void> invoke_eq_ref(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopReference(frame));
   auto b = TRY(stack->PopReference(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a == b});
+  return stack->PushPrimitive(frame, {.byte = { a.value == b.value }});
 }
 
 static Result<void> invoke_neg_int64(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
-  a.int64_value = -a.int64_value;
+  a.int64.value = -a.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -201,7 +201,7 @@ static Result<void> invoke_add_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value += b.int64_value;
+  a.int64.value += b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -210,7 +210,7 @@ static Result<void> invoke_sub_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value -= b.int64_value;
+  a.int64.value -= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -219,7 +219,7 @@ static Result<void> invoke_mul_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value *= b.int64_value;
+  a.int64.value *= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -228,7 +228,7 @@ static Result<void> invoke_div_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value /= b.int64_value;
+  a.int64.value /= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -237,7 +237,7 @@ static Result<void> invoke_mod_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value %= b.int64_value;
+  a.int64.value %= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -245,7 +245,7 @@ static Result<void> invoke_not_int64(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
-  a.int64_value = ~a.int64_value;
+  a.int64.value = ~a.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -254,7 +254,7 @@ static Result<void> invoke_and_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value &= b.int64_value;
+  a.int64.value &= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -263,7 +263,7 @@ static Result<void> invoke_or_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value |= b.int64_value;
+  a.int64.value |= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -272,7 +272,7 @@ static Result<void> invoke_xor_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value ^= b.int64_value;
+  a.int64.value ^= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -281,7 +281,7 @@ static Result<void> invoke_shl_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value <<= b.int64_value;
+  a.int64.value <<= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -290,7 +290,7 @@ static Result<void> invoke_shr_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.int64_value >>= b.int64_value;
+  a.int64.value >>= b.int64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -299,7 +299,7 @@ static Result<void> invoke_eq_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.int64_value == b.int64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.int64.value == b.int64.value }});
 }
 
 static Result<void> invoke_ne_int64(Environment* env) {
@@ -307,7 +307,7 @@ static Result<void> invoke_ne_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.int64_value != b.int64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.int64.value != b.int64.value }});
 }
 
 static Result<void> invoke_gt_int64(Environment* env) {
@@ -315,7 +315,7 @@ static Result<void> invoke_gt_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.int64_value > b.int64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.int64.value > b.int64.value }});
 }
 
 static Result<void> invoke_ge_int64(Environment* env) {
@@ -323,7 +323,7 @@ static Result<void> invoke_ge_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.int64_value >= b.int64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.int64.value >= b.int64.value }});
 }
 
 static Result<void> invoke_lt_int64(Environment* env) {
@@ -331,7 +331,7 @@ static Result<void> invoke_lt_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.int64_value <= b.int64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.int64.value <= b.int64.value }});
 }
 
 static Result<void> invoke_le_int64(Environment* env) {
@@ -339,14 +339,14 @@ static Result<void> invoke_le_int64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.int64_value <= b.int64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.int64.value <= b.int64.value }});
 }
 
 static Result<void> invoke_neg_float64(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
-  a.float64_value = -a.float64_value;
+  a.float64.value = -a.float64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -355,7 +355,7 @@ static Result<void> invoke_add_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.float64_value += b.float64_value;
+  a.float64.value += b.float64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -364,7 +364,7 @@ static Result<void> invoke_sub_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.float64_value -= b.float64_value;
+  a.float64.value -= b.float64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -373,7 +373,7 @@ static Result<void> invoke_mul_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.float64_value *= b.float64_value;
+  a.float64.value *= b.float64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -382,7 +382,7 @@ static Result<void> invoke_div_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.float64_value /= b.float64_value;
+  a.float64.value /= b.float64.value;
   return stack->PushPrimitive(frame, a);
 }
 
@@ -391,7 +391,7 @@ static Result<void> invoke_mod_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  a.float64_value = std::fmod(a.float64_value, b.float64_value);
+  a.float64.value = std::fmod(a.float64.value, b.float64.value);
   return stack->PushPrimitive(frame, a);
 }
 
@@ -400,7 +400,7 @@ static Result<void> invoke_eq_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.float64_value == b.float64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.float64.value == b.float64.value }});
 }
 
 static Result<void> invoke_ne_float64(Environment* env) {
@@ -408,7 +408,7 @@ static Result<void> invoke_ne_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.float64_value != b.float64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.float64.value != b.float64.value }});
 }
 
 static Result<void> invoke_gt_float64(Environment* env) {
@@ -416,7 +416,7 @@ static Result<void> invoke_gt_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.float64_value > b.float64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.float64.value > b.float64.value }});
 }
 
 static Result<void> invoke_ge_float64(Environment* env) {
@@ -424,7 +424,7 @@ static Result<void> invoke_ge_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.float64_value >= b.float64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.float64.value >= b.float64.value }});
 }
 
 static Result<void> invoke_lt_float64(Environment* env) {
@@ -432,7 +432,7 @@ static Result<void> invoke_lt_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.float64_value < b.float64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.float64.value < b.float64.value }});
 }
 
 static Result<void> invoke_le_float64(Environment* env) {
@@ -440,24 +440,24 @@ static Result<void> invoke_le_float64(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
   auto b = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.byte_value = a.float64_value <= b.float64_value});
+  return stack->PushPrimitive(frame, {.byte = { a.float64.value <= b.float64.value }});
 }
 
 static Result<void> invoke_conv_int64_float64(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.float64_value = static_cast<Float64T>(a.int64_value)});
+  return stack->PushPrimitive(frame, {.float64 = { static_cast<Float64T>(a.int64.value) }});
 }
 
 static Result<void> invoke_conv_float64_int64(Environment* env) {
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto a = TRY(stack->PopPrimitive(frame));
-  return stack->PushPrimitive(frame, {.int64_value = static_cast<Int64T>(a.float64_value)});
+  return stack->PushPrimitive(frame, {.int64 = { static_cast<Int64T>(a.float64.value) }});
 }
 
-Result<void> Executor::InvokeOp(Environment* env) {
+Result<void> Executor::InvokeOp(Environment* env) { // NOLINT(readability-convert-member-functions-to-static)
   auto stack = env->call_stack();
   auto frame = TRY(stack->CurrentFrame());
   auto pc = stack->pc(frame);
@@ -670,7 +670,7 @@ Result<Value> Executor::CallProcedure(Environment* env,
   }
 
   // 2. 将函数引用压栈
-  TRY(stack->PushPrimitive(initial_frame, { .proc_value = proc.get() }));
+  TRY(stack->PushPrimitive(initial_frame, { .proc = { proc.get() }}));
 
   // 3. 执行代码
   TRY(invoke_call(env)); // 插入执行 call 指令

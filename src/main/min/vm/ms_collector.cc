@@ -25,7 +25,7 @@ Result<void> MsCollectorMarker::Mark(min::StructValue* value) {
     auto&& s = v->type()->assembly();
     for (int i = 0; i < s.Count(); ++i) {
       if (TRY(s.Get(i)).type == ValueType::REF) {
-        Touch(TRY(v->GetValue(i))->reference);
+        Touch(TRY(v->GetValue(i))->reference.value);
       }
     }
   }

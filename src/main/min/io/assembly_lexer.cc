@@ -20,7 +20,7 @@ AssemblyLexer::AssemblyLexer(std::istream* stream)
 #undef DEFINE_ITEM
     }),
     type_matcher_({
-#define DEFINE_TYPE(id, code, str) { str, Type::id },
+#define DEFINE_TYPE(id, code, name) { #name, Type::id },
       MIN_TYPES
 #undef DEFINE_TYPE
     }) {}
