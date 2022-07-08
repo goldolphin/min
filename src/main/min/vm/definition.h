@@ -24,10 +24,6 @@ typedef std::int64_t Int64T;
 static_assert(sizeof(double) * CHAR_BIT == 64, "64-bit float is assumed.");
 typedef double Float64T;
 
-typedef const Procedure* ProcT;
-typedef const Struct* TypeT;
-typedef StructValue* RefT;
-
 constexpr CountT OPERAND_WIDTH_4 = 4;
 
 enum class Type : ByteT {
@@ -60,8 +56,6 @@ Result<ValueType> to_value_type(Type type);
 Result<PrimitiveType> to_primitive_type(Type type);
 
 #pragma pack(push, 0)
-using min_void_t = void;
-
 struct min_byte_t {
   ByteT value;
 };
@@ -75,11 +69,11 @@ struct min_float64_t {
 };
 
 struct min_proc_t {
-  ProcT value;
+  const Procedure* value;
 };
 
 struct min_type_t {
-  TypeT value;
+  const Struct* value;
 };
 
 struct min_field_t {
@@ -87,9 +81,8 @@ struct min_field_t {
 };
 
 struct min_ref_t {
-  RefT value;
+  StructValue* value;
 };
-
 #pragma pack(pop)
 
 union Primitive {

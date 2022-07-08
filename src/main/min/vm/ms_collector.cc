@@ -66,6 +66,7 @@ Result<void> MsCollector::Collect(CollectorRootScanner* root_scanner) {
       it = allocated_values_.erase(it);
     }
   }
+  last_collect_time_ = Now();
 
   DEBUG_LOG("## Complete GC: total_count=" << total_count
                                            << ", reachable_count=" << reachable_count
@@ -85,10 +86,9 @@ Result<StructValue*> MsCollector::New(ManagedPtr<Struct> type, CollectorRootScan
 
   if (need_collect) {
     Collect(root_scanner);
-    last_collect_time_ = Now();
   }
 
-  if (allocated_size_ + to_allocate > options_.capacity) { // NOLINT(cppcoreguidelines-narrowing-conversions)
+  if (allocated_size_ + to_allocate > options_.capacity) {
     return make_error("Out of memory: allocated=" + to_string(allocated_size_)
       + ", to_allocate=" + to_string(to_allocate)
       + ", capacity=" + to_string(options_.capacity));

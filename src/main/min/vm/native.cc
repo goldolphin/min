@@ -6,29 +6,33 @@
 
 namespace min {
 
-static std::map<std::string, NativeModuleDefinition>* native_table() {
-  static auto table = new std::map<std::string, NativeModuleDefinition>();
+static std::map<std::string, native::Module>* modules() {
+  static auto table = new std::map<std::string, native::Module>();
   return table;
 }
 
-void Native::RegisterProcedure(const std::string& module_name,
-                               const std::string& proc_name,
-                               NativeProcedureDefinition definition) {
-  auto table = min::native_table();
+native::Module* Native::GetModule(const std::string& module_name) {
+  auto table = min::modules();
   auto iter = table->find(module_name);
   if (iter == table->end()) {
-    iter = table->emplace(module_name, NativeModuleDefinition {}).first;
+    iter = table->emplace(module_name, native::Module { .name = module_name }).first;
   }
-  iter->second.procedures.insert_or_assign(proc_name, std::move(definition));
+  return &iter->second;
 }
 
-const std::map<std::string, NativeModuleDefinition>& Native::native_table() {
-  return *min::native_table();
+const std::map<std::string, native::Module>& Native::modules() {
+  return *min::modules();
 }
 
-NativeProcedureInitializer::NativeProcedureInitializer(const std::string& module_name,
-                                                       const std::string& proc_name,
-                                                       NativeProcedureDefinition definition) {
-  Native::RegisterProcedure(module_name, proc_name, std::move(definition));
+NativeModuleInitializer::NativeModuleInitializer(const native::Module& module) {
+  auto m = Native::GetModule(module.name);
+  for (auto&& p : module.procedures) {
+    m->procedures.insert_or_assign(p.first, p.second);
+  }
 }
+
+void NativeModuleInitializer::initialize() {
+  // Nothing need to do.
+}
+
 }

@@ -88,7 +88,7 @@ static Result<void> invoke_call(Environment* env) {
   } else {
     DEBUG_LOG("## Enter native procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
     TRY(stack->PushFrame(v.proc.value->managed_ptr()));
-    v.proc.value->native_impl()(env);
+    TRY(v.proc.value->native_impl()(env));
     DEBUG_LOG("## Exit native procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
     return stack->PopFrame();
   }

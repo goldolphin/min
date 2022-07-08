@@ -3,32 +3,27 @@
 //
 
 #include "min/lib/io.h"
-#include "min/vm/native.h"
 
 namespace min::lib::io {
 
-static Result<void> PrintInt64(Environment* env) {
-  auto stack = env->call_stack();
-  auto frame = TRY(stack->CurrentFrame());
-  auto v = TRY(stack->PopPrimitive(frame));
-  std::cout << v.int64.value << std::endl;
+static Result<void> PrintInt64(min_int64_t v) {
+  std::cout << v.value << std::endl;
   return {};
 }
 
-
-static Result<void> PrintFloat64(Environment* env) {
-  auto stack = env->call_stack();
-  auto frame = TRY(stack->CurrentFrame());
-  auto v = TRY(stack->PopPrimitive(frame));
-  std::cout << v.float64.value << std::endl;
+static Result<void> PrintFloat64(min_float64_t v) {
+  std::cout << v.value << std::endl;
   return {};
 }
 
-[[maybe_unused]] struct LibIoInitializer {
-  LibIoInitializer() {
-    Native::RegisterProcedure("io", "print_int64", {RetType::VOID, { ValueType::INT64 }, PrintInt64});
-    Native::RegisterProcedure("io", "print_float64", {RetType::VOID, { ValueType::FLOAT64 }, PrintInt64});
+NativeModuleInitializer initializer (
+  {
+    .name = "io",
+    .procedures = {
+      {"print_int64", NATIVE_PROCEDURE(PrintInt64) },
+      {"print_float64", NATIVE_PROCEDURE(PrintFloat64) },
+    },
   }
-} initializer;
+);
 
 }

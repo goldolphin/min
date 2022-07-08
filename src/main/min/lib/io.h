@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include "min/common/result.h"
-#include "min/vm/module_table.h"
+#include "min/vm/native.h"
 
 namespace min::lib::io {
-extern struct LibIoInitializer initializer;
+extern NativeModuleInitializer initializer;
 
 }

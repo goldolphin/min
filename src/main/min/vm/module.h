@@ -16,7 +16,7 @@ namespace min {
 
 struct Constant {
   assembly::Constant assembly;
-  Primitive value;
+  Primitive value {};
 };
 
 class Module;

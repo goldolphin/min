@@ -11,15 +11,16 @@ namespace min {
 Engine::Engine(Options options) : env_(&module_table_, std::move(options)) {}
 
 Result<std::unique_ptr<Engine>> Engine::Create(Options options) {
+  min::lib::io::initializer.initialize();
   std::unique_ptr<Engine> engine (new Engine(std::move(options)));
   auto module_table = engine->module_table();
-  for (auto&& m : Native::native_table()) {
+  for (auto&& m : Native::modules()) {
     auto module = TRY(module_table->GetOrNewModule(m.first));
     for (auto&& p : m.second.procedures) {
       assembly::Procedure assembly(p.first);
-      assembly.ret_type(p.second.ret_type);
-      assembly.SetParams(p.second.params);
-      TRY(module->DefineProcedure(std::move(assembly), p.second.proc));
+      assembly.ret_type(p.second.ret_type());
+      assembly.SetParams(p.second.params());
+      TRY(module->DefineProcedure(std::move(assembly), p.second.proc()));
     }
   }
   return std::move(engine);
