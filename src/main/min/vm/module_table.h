@@ -12,15 +12,18 @@ namespace min {
 
 class ModuleTable {
  public:
-  [[nodiscard]] Result<ManagedPtr<Module>> GetModule(const std::string& name) const;
-  [[nodiscard]] Result<ManagedPtr<Module>> NewModule(const std::string& name);
-  [[nodiscard]] Result<ManagedPtr<Module>> GetOrNewModule(const std::string& name);
+  explicit ModuleTable(Heap* heap) : heap_(heap) {}
+
+  [[nodiscard]] Result<Module*> GetModule(const std::string& name) const;
+  [[nodiscard]] Result<Module*> NewModule(const std::string& name);
+  [[nodiscard]] Result<Module*> GetOrNewModule(const std::string& name);
   Result<void> LoadModule(const assembly::Module& assembly);
 
-  [[nodiscard]] Result<void> ResolveAndDefineConstant(ManagedPtr<Module> target_module, assembly::Constant constant) const;
+  [[nodiscard]] Result<void> ResolveAndDefineConstant(Module* target_module, assembly::Constant constant) const;
 
  private:
-  IndexedList<Managed<Module>> modules_;
+  Heap* heap_;
+  IndexedList<Module*> modules_;
 };
 
 }

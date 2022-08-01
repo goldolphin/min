@@ -6,7 +6,7 @@
 
 #include "definition.h"
 #include "module.h"
-#include "collector.h"
+#include "min/vm/memory/collector.h"
 #include "min/common/to_string.h"
 #include "min/common/result.h"
 #include <vector>

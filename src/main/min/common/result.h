@@ -37,7 +37,7 @@ class Error {
 #ifndef NDEBUG
     auto ctx = context();
     ctx->frames.clear();
-    ctx->frames.emplace_back(Frame {function, file, line});
+    ctx->frames.emplace_back(Frame{function, file, line});
 #endif
   }
 
@@ -59,10 +59,10 @@ class Error {
     std::abort();
   }
 
-  Error&& AppendFrame(const char* function, const char* file, int line) && {
+  Error&& AppendFrame(const char* function, const char* file, int line)&& {
 #ifndef NDEBUG
     auto ctx = context();
-    ctx->frames.emplace_back(Frame {function, file, line});
+    ctx->frames.emplace_back(Frame{function, file, line});
     return std::move(*this);
 #endif
   }
@@ -71,7 +71,7 @@ class Error {
   std::string msg_;
 };
 
-template <class T>
+template<class T>
 class Result {
  public:
   Result(Result&&) noexcept = default;
@@ -79,14 +79,14 @@ class Result {
   Result& operator=(Result&&) = delete;
   Result& operator=(const Result&) = delete;
 
-  Result(T value) : v_(std::move(value)) { } // NOLINT(google-explicit-constructor)
-  Result(Error error) : v_(std::move(error)) { } // NOLINT(google-explicit-constructor)
+  Result(T value) : v_(std::move(value)) {} // NOLINT(google-explicit-constructor)
+  Result(Error error) : v_(std::move(error)) {} // NOLINT(google-explicit-constructor)
 
   [[nodiscard]] const T& value() const& {
     return std::get<1>(v_);
   }
 
-  [[nodiscard]] T&& value() && {
+  [[nodiscard]] T&& value()&& {
     return std::get<1>(std::move(v_));
   }
 
@@ -98,14 +98,8 @@ class Result {
     return std::get<0>(v_);
   }
 
-  Error&& error() && {
+  Error&& error()&& {
     return std::get<0>(std::move(v_));
-  }
-
-  void Ensure() const {
-    if (!ok()) {
-      error().Abort();
-    }
   }
 
  private:
@@ -120,8 +114,8 @@ class Result<T&> {
   Result& operator=(Result&&) = delete;
   Result& operator=(const Result&) = delete;
 
-  Result(T& value) : v_(&value) { } // NOLINT(google-explicit-constructor)
-  Result(Error error) : v_(std::move(error)) { } // NOLINT(google-explicit-constructor)
+  Result(T& value) : v_(&value) {} // NOLINT(google-explicit-constructor)
+  Result(Error error) : v_(std::move(error)) {} // NOLINT(google-explicit-constructor)
 
   [[nodiscard]] T& value() const {
     return *std::get<1>(v_);
@@ -135,14 +129,8 @@ class Result<T&> {
     return std::get<0>(v_);
   }
 
-  Error&& error() && {
+  Error&& error()&& {
     return std::get<0>(std::move(v_));
-  }
-
-  void Ensure() const {
-    if (!ok()) {
-      error().Abort();
-    }
   }
 
  private:
@@ -158,7 +146,7 @@ class Result<void> {
   Result& operator=(const Result&) = delete;
 
   Result() = default;
-  Result(Error error) : v_(std::move(error)) { } // NOLINT(google-explicit-constructor)
+  Result(Error error) : v_(std::move(error)) {} // NOLINT(google-explicit-constructor)
 
   /**
    * 用于将其他任意类型的Result<T> 转换为该类型，忽略其值，仅保留错误与否的信息
@@ -172,7 +160,7 @@ class Result<void> {
     }
   }
 
-  void value() const { }
+  void value() const {}
 
   [[nodiscard]] bool ok() const {
     return !v_;
@@ -182,14 +170,8 @@ class Result<void> {
     return *v_;
   }
 
-  Error&& error() && {
+  Error&& error()&& {
     return *std::move(v_);
-  }
-
-  void Ensure() const {
-    if (!ok()) {
-      error().Abort();
-    }
   }
 
  private:
@@ -215,8 +197,14 @@ std::move(_r);                                                                  
 }).value()
 
 /**
- * 确认一个 Result 对象是否成功，如否则退出程序
+ * 确认一个 Result 对象是否成功，成功返回其值，失败则退出程序
  */
-#define ENSURE(r) (r).Ensure()
+#define ENSURE(r) ({                                                                      \
+std::remove_cv_t<std::remove_reference_t<decltype(r)>>&& _r = (r);                        \
+if (!_r.ok()) {                                                                           \
+  _r.error().Abort();                                                                     \
+}                                                                                         \
+std::move(_r);                                                                            \
+}).value()
 
 }

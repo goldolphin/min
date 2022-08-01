@@ -6,18 +6,19 @@
 
 namespace min {
 
-Result<ManagedPtr<Module>> ModuleTable::GetModule(const std::string& name) const {
-  return TRY(modules_.Get(name)).ptr();
+Result<Module*> ModuleTable::GetModule(const std::string& name) const {
+  return TRY(modules_.Get(name));
 }
 
-Result<ManagedPtr<Module>> ModuleTable::NewModule(const std::string& name) {
+Result<Module*> ModuleTable::NewModule(const std::string& name) {
+  static SimpleReferenceType<Module>
   auto module = Module::Create(name);
   auto ptr = module.ptr();
   TRY(modules_.Put(name, std::move(module)));
   return ptr;
 }
 
-Result<ManagedPtr<Module>> ModuleTable::GetOrNewModule(const std::string& name) {
+Result<Module*> ModuleTable::GetOrNewModule(const std::string& name) {
   auto index = modules_.Find(name);
   if (index < 0) {
     return NewModule(name);
@@ -26,14 +27,14 @@ Result<ManagedPtr<Module>> ModuleTable::GetOrNewModule(const std::string& name) 
   }
 }
 
-static Result<ManagedPtr<Module>> GetModule0(const ModuleTable& module_table,
-                                            ManagedPtr<Module> target_module,
+static Result<Module*> GetModule0(const ModuleTable& module_table,
+                                            Module* target_module,
                                             const std::string& name) {
   return (name == target_module->name()) ? target_module : TRY(module_table.GetModule(name));
 }
 
 static Result<Primitive> ResolveConstant(const ModuleTable& module_table,
-                                         ManagedPtr<Module> target_module,
+                                         Module* target_module,
                                          const assembly::Constant& constant) {
   Primitive value{};
   switch (constant.type) {
@@ -79,7 +80,7 @@ static Result<Primitive> ResolveConstant(const ModuleTable& module_table,
   return value;
 }
 
-Result<void> ModuleTable::ResolveAndDefineConstant(ManagedPtr<Module> target_module, assembly::Constant constant) const {
+Result<void> ModuleTable::ResolveAndDefineConstant(Module* target_module, assembly::Constant constant) const {
   auto v = TRY(ResolveConstant(*this, target_module, constant));
   return target_module->DefineConstant(std::move(constant), v);
 }
