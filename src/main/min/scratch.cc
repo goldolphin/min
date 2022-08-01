@@ -45,8 +45,43 @@ struct Helper<base, R()> {
   }
 };
 
+struct CollectableHeader {
+ public:
+  enum class Flag : char {
+    UNKNOWN = 0,
+    REACHABLE = 1,
+  };
+
+  int* type;
+  Flag flag;
+};
+
+struct CollectableData {
+  char data[0];
+};
+
+struct Collectable : public CollectableHeader, public CollectableData {
+
+};
+
 
 int main() {
+  std::cout << sizeof(CollectableHeader) << std::endl;
+  std::cout << sizeof(CollectableData) << std::endl;
+  std::cout << sizeof(Collectable) << std::endl;
+  std::cout << offsetof(Collectable, type) << std::endl;
+  std::cout << offsetof(Collectable, flag) << std::endl;
+
+  Collectable o;
+  CollectableHeader* h = &o;
+  CollectableData* d = &o;
+  auto* c = static_cast<Collectable*>(d);
+  std::cout << std::hex << &o << std::endl;
+  std::cout << std::hex << h << std::endl;
+  std::cout << std::hex << d << std::endl;
+  std::cout << std::hex << c << std::endl;
   Helper<foo, decltype(foo)>::func();
+  void* mem = h;
+  static_cast<CollectableData*>(mem)->~CollectableData();
   return 0;
 }

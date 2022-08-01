@@ -31,6 +31,8 @@ class Engine {
                               const std::vector<Value>& params);
  private:
   Executor executor_;
+  CallStack call_stack_;
+  Heap heap_;
   ModuleTable module_table_;
   Environment env_;
 };

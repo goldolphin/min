@@ -15,10 +15,14 @@ typedef std::int32_t CountT;
 template <class T, class Key = std::string, class Compare = std::less<Key>>
 class IndexedList {
  public:
-  [[nodiscard]] Result<const T&> Get(CountT index) const;
-  [[nodiscard]] Result<T*> Get(CountT index);
-  [[nodiscard]] Result<const T&> Get(const Key& key) const;
-  [[nodiscard]] Result<T*> Get(const Key& key);
+  using ReturnType = std::conditional_t<std::is_pointer_v<T>, T, T&>;
+  using ConstReturnType = std::conditional_t<std::is_pointer_v<T>, const T, const T&>;
+
+ public:
+  [[nodiscard]] Result<ConstReturnType> Get(CountT index) const;
+  [[nodiscard]] Result<ReturnType> Get(CountT index);
+  [[nodiscard]] Result<ConstReturnType> Get(const Key& key) const;
+  [[nodiscard]] Result<ReturnType> Get(const Key& key);
   [[nodiscard]] CountT Find(const Key& key) const;
   template <class... Args>
   Result<void> Put(const Key& key, Args&&... args);
@@ -30,7 +34,7 @@ class IndexedList {
 };
 
 template<class T, class Key, class Compare>
-Result<const T&> IndexedList<T, Key, Compare>::Get(CountT index) const {
+Result<typename IndexedList<T, Key, Compare>::ConstReturnType> IndexedList<T, Key, Compare>::Get(CountT index) const {
   if (index < 0 || index >= list_.size()) {
     return make_error("Index not found: " + to_string(index));
   }
@@ -38,15 +42,15 @@ Result<const T&> IndexedList<T, Key, Compare>::Get(CountT index) const {
 }
 
 template<class T, class Key, class Compare>
-Result<T*> IndexedList<T, Key, Compare>::Get(CountT index) {
+Result<typename IndexedList<T, Key, Compare>::ReturnType> IndexedList<T, Key, Compare>::Get(CountT index) {
   if (index < 0 || index >= list_.size()) {
     return make_error("Index not found: " + to_string(index));
   }
-  return &(list_[index]);
+  return list_[index];
 }
 
 template<class T, class Key, class Compare>
-Result<const T&> IndexedList<T, Key, Compare>::Get(const Key& key) const {
+Result<typename IndexedList<T, Key, Compare>::ConstReturnType> IndexedList<T, Key, Compare>::Get(const Key& key) const {
   auto index = Find(key);
   if (index < 0) {
     return make_error("Key not found: " + to_string(key));
@@ -55,7 +59,7 @@ Result<const T&> IndexedList<T, Key, Compare>::Get(const Key& key) const {
 }
 
 template<class T, class Key, class Compare>
-Result<T*> IndexedList<T, Key, Compare>::Get(const Key& key) {
+Result<typename IndexedList<T, Key, Compare>::ReturnType> IndexedList<T, Key, Compare>::Get(const Key& key) {
   auto index = Find(key);
   if (index < 0) {
     return make_error("Key not found: " + to_string(key));
@@ -86,7 +90,7 @@ Result<void> IndexedList<T, Key, Compare>::Put(const Key& key,  Args&&... args) 
 
 template<class T, class Key, class Compare>
 CountT IndexedList<T, Key, Compare>::Count() const {
-  return static_cast<CountT>(list_.size());;
+  return static_cast<CountT>(list_.size());
 }
 
 }

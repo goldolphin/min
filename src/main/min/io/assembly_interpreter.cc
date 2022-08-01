@@ -37,7 +37,7 @@ Result<void> AssemblyInterpreterHandler::StructField(std::string name, ValueType
 
 Result<void> AssemblyInterpreterHandler::StructEnd() {
   DEBUG_LOG("## Complete struct" << std::endl);
-  return current_module_->DefineStruct(std::move(*current_struct_.release()));
+  return engine_->module_table()->DefineStruct(current_module_, std::move(*current_struct_));
 }
 
 Result<void> AssemblyInterpreterHandler::ProcBegin(std::string name) {
@@ -48,7 +48,7 @@ Result<void> AssemblyInterpreterHandler::ProcBegin(std::string name) {
 
 Result<void> AssemblyInterpreterHandler::ProcEnd() {
   DEBUG_LOG("## Complete procedure" << std::endl);
-  return current_module_->DefineProcedure(std::move(*current_proc_.release()));
+  return engine_->module_table()->DefineProcedure(current_module_, std::move(*current_proc_));
 }
 
 Result<void> AssemblyInterpreterHandler::Ret(RetType type) {
@@ -74,7 +74,7 @@ Result<void> AssemblyInterpreterHandler::CodeBegin() {
 
 Result<void> AssemblyInterpreterHandler::CodeEnd() {
   DEBUG_LOG("## Complete code block" << std::endl);
-  current_proc_->SetByteCodes(TRY(std::move(*current_op_writer_.release()).ToByteCodes(*engine_->module_table(), current_module_)));
+  current_proc_->SetByteCodes(TRY(std::move(*current_op_writer_.release()).ToByteCodes(engine_->module_table(), current_module_)));
   return {};
 }
 

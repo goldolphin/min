@@ -21,7 +21,7 @@ class OpWriter {
   void WriteOp(OpCode op, assembly::Constant constant);
   void WriteOp(OpCode op, std::string label);
   void NewLabel(std::string label);
-  Result<std::basic_string<ByteT>> ToByteCodes(const ModuleTable& module_table, ManagedPtr<Module> module) &&;
+  Result<std::basic_string<ByteT>> ToByteCodes(ModuleTable* module_table, Module* module) &&;
 
   OpWriter&& label(std::string label) && {
     NewLabel(std::move(label));

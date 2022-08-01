@@ -13,8 +13,8 @@
 namespace min {
 
 class Procedure;
-class Struct;
-class StructValue;
+class ReferenceType;
+class Collectable;
 
 typedef std::int32_t CountT;
 
@@ -73,7 +73,7 @@ struct min_proc_t {
 };
 
 struct min_type_t {
-  const Struct* value;
+  const ReferenceType* value;
 };
 
 struct min_field_t {
@@ -81,7 +81,7 @@ struct min_field_t {
 };
 
 struct min_ref_t {
-  StructValue* value;
+  Collectable* value;
 };
 #pragma pack(pop)
 

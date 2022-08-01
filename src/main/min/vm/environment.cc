@@ -5,8 +5,7 @@
 
 namespace min {
 
-Environment::Environment(ModuleTable* module_table, Options options)
-    : module_table_(module_table),
-      heap_(std::move(options.heap_options), call_stack_.CreateRootScanner()) {}
+Environment::Environment(CallStack* call_stack, Heap* heap, ModuleTable* module_table)
+    : call_stack_(call_stack), heap_(heap), module_table_(module_table) {}
 
 }

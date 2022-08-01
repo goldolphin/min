@@ -12,24 +12,24 @@ namespace min {
 
 class Environment {
  public:
-  Environment(ModuleTable* module_table, Options options);
+  Environment(CallStack* call_stack, Heap* heap, ModuleTable* module_table);
 
   [[nodiscard]] ModuleTable* module_table() {
     return module_table_;
   }
 
   [[nodiscard]] CallStack* call_stack() {
-    return &call_stack_;
+    return call_stack_;
   }
 
   [[nodiscard]] Heap* heap() {
-    return &heap_;
+    return heap_;
   }
 
  private:
+  CallStack* call_stack_;
+  Heap* heap_;
   ModuleTable* module_table_;
-  CallStack call_stack_;
-  Heap heap_;
 };
 
 }

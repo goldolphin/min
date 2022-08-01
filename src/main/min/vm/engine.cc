@@ -8,7 +8,11 @@
 
 namespace min {
 
-Engine::Engine(Options options) : env_(&module_table_, std::move(options)) {}
+Engine::Engine(Options options) :
+  call_stack_(),
+  heap_(std::move(options.heap_options), call_stack_.CreateRootScanner()),
+  module_table_(&heap_),
+  env_(&call_stack_, &heap_, &module_table_) {}
 
 Result<std::unique_ptr<Engine>> Engine::Create(Options options) {
   min::lib::io::initializer.initialize();
@@ -20,7 +24,7 @@ Result<std::unique_ptr<Engine>> Engine::Create(Options options) {
       assembly::Procedure assembly(p.first);
       assembly.ret_type(p.second.ret_type());
       assembly.SetParams(p.second.params());
-      TRY(module->DefineProcedure(std::move(assembly), p.second.proc()));
+      TRY(module_table->DefineProcedure(module, std::move(assembly), p.second.proc()));
     }
   }
   return std::move(engine);

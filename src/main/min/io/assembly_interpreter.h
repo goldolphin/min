@@ -12,7 +12,7 @@ namespace min {
 
 class AssemblyInterpreterHandler : public AssemblyReaderHandler {
  public:
-  explicit AssemblyInterpreterHandler(std::unique_ptr<Engine> engine) : engine_(std::move(engine)) {}
+  explicit AssemblyInterpreterHandler(std::unique_ptr<Engine> engine) : current_module_(nullptr), engine_(std::move(engine)) {}
 
   Result<void> ModuleBegin(std::string name) override;
   Result<void> ModuleEnd() override;
@@ -33,7 +33,7 @@ class AssemblyInterpreterHandler : public AssemblyReaderHandler {
   Result<void> Label(std::string name) override;
 
  private:
-  ManagedPtr<Module> current_module_;
+  Module* current_module_;
   std::unique_ptr<assembly::Struct> current_struct_;
   std::unique_ptr<assembly::Procedure> current_proc_;
   std::unique_ptr<OpWriter> current_op_writer_;

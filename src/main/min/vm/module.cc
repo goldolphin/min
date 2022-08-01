@@ -5,27 +5,20 @@
 
 namespace min {
 
-Result<ManagedPtr<Struct>> Module::GetStruct(const std::string& name) const {
-  return TRY(struct_table_.Get(name)).ptr();
+Result<Struct*> Module::GetStruct(const std::string& name) const {
+  return TRY(struct_table_.Get(name));
 }
 
-Result<void> Module::DefineStruct(assembly::Struct s) {
-  auto m = Struct::Create(managed_ptr(), std::move(s));
-  return struct_table_.Put(m.ptr()->assembly().name(), std::move(m));
+Result<void> Module::PutStruct(Struct* s) {
+  return struct_table_.Put(s->assembly().name(), s);
 }
 
-Result<ManagedPtr<Procedure>> Module::GetProcedure(const std::string& name) const {
-  return TRY(procedures_table_.Get(name)).ptr();
+Result<Procedure*> Module::GetProcedure(const std::string& name) const {
+  return TRY(procedures_table_.Get(name));
 }
 
-Result<void> Module::DefineProcedure(assembly::Procedure proc) {
-  auto m = Procedure::Create(managed_ptr(), std::move(proc));
-  return procedures_table_.Put(m.ptr()->assembly().name(), std::move(m));
-}
-
-Result<void> Module::DefineProcedure(assembly::Procedure proc, NativeProcedure native_impl) {
-  auto m = Procedure::Create(managed_ptr(), std::move(proc), native_impl);
-  return procedures_table_.Put(m.ptr()->assembly().name(), std::move(m));
+Result<void> Module::PutProcedure(Procedure* proc) {
+  return procedures_table_.Put(proc->assembly().name(), proc);
 }
 
 Result<const Constant&> Module::GetConstant(CountT i) const {
@@ -40,11 +33,10 @@ Result<CountT> Module::FindConstant(const assembly::Constant& constant) const {
   return index;
 }
 
-Result<void> Module::DefineConstant(assembly::Constant constant, Primitive value) {
-  if (constant_pool_.Find(constant) >= 0) {
-    return make_error("Constant already exists: " + min::to_string(constant));
+Result<void> Module::PutConstant(Constant c) {
+  if (constant_pool_.Find(c.assembly) >= 0) {
+    return make_error("Constant already exists: " + min::to_string(c.assembly));
   }
-  Constant c = {std::move(constant), value};
   return constant_pool_.Put(c.assembly, std::move(c));
 }
 

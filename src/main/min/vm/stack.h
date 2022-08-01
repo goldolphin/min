@@ -6,7 +6,7 @@
 
 #include "definition.h"
 #include "module.h"
-#include "collector.h"
+#include "min/vm/memory/collector.h"
 #include "min/common/to_string.h"
 #include "min/common/result.h"
 #include <vector>
@@ -87,7 +87,7 @@ struct Frame {
   Frame(CountT local_num,
         CountT primitive_stack_bottom,
         CountT ref_stack_bottom,
-        ManagedPtr<Procedure> proc)
+        const Procedure* proc)
       : locals(local_num),
         primitive_stack_bottom(primitive_stack_bottom),
         ref_stack_bottom(ref_stack_bottom),
@@ -103,7 +103,7 @@ struct Frame {
   CountT ref_stack_bottom;
 
   // Procedure info
-  ManagedPtr<Procedure> proc;
+  const Procedure* proc;
 
   // PC
   CountT pc;
@@ -113,14 +113,14 @@ class CallStack {
  public:
   CallStack() {
     // 压入一个初始Frame，简化后续判断逻辑
-    ENSURE(frames_.Push(0, 0, 0, ManagedPtr<Procedure>()));
+    ENSURE(frames_.Push(0, 0, 0, nullptr));
   }
 
   Result<Frame*> CurrentFrame() {
     return frames_.Top();
   }
 
-  Result<void> PushFrame(ManagedPtr<Procedure> proc) {
+  Result<void> PushFrame(const Procedure* proc) {
     auto frame = TRY(CurrentFrame());
 
     CountT primitive_stack_bottom = primitive_stack_.Count() - proc->paramp_num();
@@ -180,11 +180,11 @@ class CallStack {
     return ref_stack_.Pop();
   }
 
-  [[nodiscard]] ManagedPtr<Procedure> GetProcedure(Frame* frame) { // NOLINT(readability-convert-member-functions-to-static)
+  [[nodiscard]] const Procedure* GetProcedure(Frame* frame) { // NOLINT(readability-convert-member-functions-to-static)
     return frame->proc;
   }
 
-  [[nodiscard]] ManagedPtr<Module> GetModule(Frame* frame) { // NOLINT(readability-convert-member-functions-to-static)
+  [[nodiscard]] Module* GetModule(Frame* frame) { // NOLINT(readability-convert-member-functions-to-static)
     return frame->proc->module();
   }
 

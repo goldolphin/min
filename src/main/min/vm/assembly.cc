@@ -7,6 +7,7 @@
 namespace min::assembly {
 
 Result<const Struct::Field&> Struct::Get(CountT i) const {
+  auto aa = fields_.Get(i);
   return fields_.Get(i);
 }
 

@@ -6,7 +6,7 @@
 
 #include "min/vm/definition.h"
 #include "min/vm/assembly.h"
-#include "min/common/managed.h"
+#include "min/vm/heap.h"
 #include <map>
 #include <set>
 #include <memory>
@@ -21,12 +21,30 @@ struct Constant {
 
 class Module;
 
-class Struct : public EnableManaged<Struct> {
+class StructValue {
  public:
-  Struct(ManagedPtr<Module> module, assembly::Struct assembly)
-    : module_(module), assembly_(std::move(assembly)), singleton_(nullptr) {}
+  explicit StructValue(CountT count) : count_(count) {
+    fields_ = std::make_unique<Value[]>(count_);
+  }
 
-  [[nodiscard]] ManagedPtr<Module> module() const {
+  Result<Value*> GetValue(CountT i) {
+    if (i < 0 || i >= count_) {
+      return make_error("Index out of bounds: " + to_string(i));
+    }
+    return &fields_[i];
+  }
+
+ private:
+  CountT count_;
+  std::unique_ptr<Value[]> fields_;
+};
+
+class Struct : public SimpleReferenceType<StructValue> {
+ public:
+  Struct(Module* module, assembly::Struct assembly)
+    : module_(module), assembly_(std::move(assembly)) {}
+
+  [[nodiscard]] Module* module() const {
     return module_;
   }
 
@@ -34,21 +52,31 @@ class Struct : public EnableManaged<Struct> {
     return assembly_;
   }
 
- private:
-  ManagedPtr<Module> module_;
-  const assembly::Struct assembly_;
+  void InitializeValue(Collectable* collectable) const override {
+    new(collectable->value()) StructValue(assembly_.Count());
+  }
 
-  // 配合实现 singleton 指令
-  friend class Heap;
-  StructValue* singleton_;
+  void TraverseCollectableFields(Collectable* collectable, CollectableVisitor* visitor) const override {
+    CountT count = assembly_.Count();
+    auto v = static_cast<StructValue*>(collectable->value());
+    for (auto i = 0; i < count; ++i) {
+      if (ENSURE(assembly_.Get(i)).type == ValueType::REF) {
+        visitor->Visit(ENSURE(v->GetValue(i))->reference.value);
+      }
+    }
+  }
+
+ private:
+  Module* module_;
+  const assembly::Struct assembly_;
 };
 
 class Environment;
 using NativeProcedure = Result<void> (*)(Environment* env);
 
-class Procedure : public EnableManaged<Procedure> {
+class Procedure : public PermanentValue {
  public:
-  Procedure(ManagedPtr<Module> module, assembly::Procedure assembly, NativeProcedure native_impl)
+  Procedure(Module* module, assembly::Procedure assembly, NativeProcedure native_impl)
     : module_(module), assembly_(std::move(assembly)), paramp_num_(0), paramr_num_(0), native_impl_(native_impl) {
     for (CountT i = 0; i < assembly_.ParamCount(); ++i) {
       if (assembly_.GetParam(i).value() != ValueType::REF) {
@@ -59,10 +87,10 @@ class Procedure : public EnableManaged<Procedure> {
     }
   }
 
-  Procedure(ManagedPtr<Module> module, assembly::Procedure assembly)
+  Procedure(Module* module, assembly::Procedure assembly)
       : Procedure(module, std::move(assembly), nullptr) {}
 
-  [[nodiscard]] ManagedPtr<Module> module() const {
+  [[nodiscard]] Module* module() const {
     return module_;
   }
 
@@ -83,14 +111,14 @@ class Procedure : public EnableManaged<Procedure> {
   }
 
  private:
-  ManagedPtr<Module> module_;
+  Module* module_;
   const assembly::Procedure assembly_;
   CountT paramp_num_;
   CountT paramr_num_;
   NativeProcedure native_impl_;
 };
 
-class Module : public EnableManaged<Module> {
+class Module : public PermanentValue {
  public:
   explicit Module(std::string name) : name_(std::move(name)) { }
 
@@ -98,22 +126,21 @@ class Module : public EnableManaged<Module> {
     return name_;
   }
 
-  [[nodiscard]] Result<ManagedPtr<Struct>> GetStruct(const std::string& name) const;
-  Result<void> DefineStruct(assembly::Struct s);
+  [[nodiscard]] Result<Struct*> GetStruct(const std::string& name) const;
+  Result<void> PutStruct(Struct* s);
 
-  [[nodiscard]] Result<ManagedPtr<Procedure>> GetProcedure(const std::string& name) const;
-  Result<void> DefineProcedure(assembly::Procedure proc);
-  Result<void> DefineProcedure(assembly::Procedure proc, NativeProcedure native_impl);
+  [[nodiscard]] Result<Procedure*> GetProcedure(const std::string& name) const;
+  Result<void> PutProcedure(Procedure* proc);
 
   [[nodiscard]] Result<const Constant&> GetConstant(CountT i) const;
   [[nodiscard]] Result<CountT> FindConstant(const assembly::Constant& constant) const;
-  Result<void> DefineConstant(assembly::Constant constant, Primitive value);
+  Result<void> PutConstant(Constant c);
   [[nodiscard]] CountT ConstantCount() const;
 
  private:
   std::string name_;
-  IndexedList<Managed<Struct>> struct_table_;
-  IndexedList<Managed<Procedure>> procedures_table_;
+  IndexedList<Struct*> struct_table_;
+  IndexedList<Procedure*> procedures_table_;
   IndexedList<Constant, assembly::Constant, assembly::Constant::Less> constant_pool_;
 };
 

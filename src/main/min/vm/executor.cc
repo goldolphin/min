@@ -84,10 +84,10 @@ static Result<void> invoke_call(Environment* env) {
   auto v = TRY(stack->PopPrimitive(frame));
   if (v.proc.value->native_impl() == nullptr) {
     DEBUG_LOG("## Enter procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
-    return stack->PushFrame(v.proc.value->managed_ptr());
+    return stack->PushFrame(v.proc.value);
   } else {
     DEBUG_LOG("## Enter native procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
-    TRY(stack->PushFrame(v.proc.value->managed_ptr()));
+    TRY(stack->PushFrame(v.proc.value));
     TRY(v.proc.value->native_impl()(env));
     DEBUG_LOG("## Exit native procedure: " << v.proc.value->assembly().name() << "()" << std::endl);
     return stack->PopFrame();
@@ -121,7 +121,7 @@ static Result<void> invoke_new(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto t = TRY(stack->PopPrimitive(frame));
   auto heap = env->heap();
-  auto r = TRY(heap->New(t.type.value->managed_ptr()));
+  auto r = TRY(heap->New(t.type.value));
   return stack->PushReference(frame, { r });
 }
 
@@ -130,7 +130,7 @@ static Result<void> invoke_singleton(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto t = TRY(stack->PopPrimitive(frame));
   auto heap = env->heap();
-  auto r = TRY(heap->Singleton(t.type.value->managed_ptr()));
+  auto r = TRY(heap->Singleton(t.type.value));
   return stack->PushReference(frame, { r });
 }
 
@@ -139,7 +139,7 @@ static Result<void> invoke_typeof(Environment* env) {
   auto frame = TRY(stack->CurrentFrame());
   auto r = TRY(stack->PopReference(frame));
   auto t = r.value->type();
-  return stack->PushPrimitive(frame, { .type = { t.get() }});
+  return stack->PushPrimitive(frame, { .type = {static_cast<const ReferenceType*>(t) }});
 }
 
 static Result<void> invoke_getp(Environment* env) {

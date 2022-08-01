@@ -46,7 +46,7 @@ CollectorRootScanner CallStack::CreateRootScanner() {
     // 标记LocalTable
     for (auto&& f : *frames_.underlying()) {
       auto proc = f.proc;
-      if (proc.get() != nullptr) {
+      if (proc != nullptr) {
         auto&& assembly = proc->assembly();
         for (CountT i = 0; i < assembly.LocalCount(); ++i) {
           if (TRY(assembly.GetLocal(i)) == ValueType::REF) {
